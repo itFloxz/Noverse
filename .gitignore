@@ -1,5 +1,8 @@
 
 /Music-project/env
 /env
-run_project.bat
 *.bat
+/Music-project/django_rest_auth/accounts/__pycache__
+/Music-project/django_rest_auth/django_rest_auth/__pycache__
+/Music-project/django_rest_auth/django_rest_auth/__pycache__
+/Music-project/django_rest_auth/accounts/__pycache__
