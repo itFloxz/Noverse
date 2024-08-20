@@ -24,7 +24,7 @@ axiosInstance.interceptors.request.use(async req =>{
         req.headers.Authorization = `Bearer ${token}`
         const user =  jwtDecode(token)
         const isExpired=dayjs.unix(user.exp).diff(dayjs())<1
-        if (isExpired) {
+        if (!isExpired) {
             return req
         }else{
             const res = await axios.post(`${baseURL}/auth/token/refresh/`,{refresh:refresh})
@@ -43,13 +43,12 @@ axiosInstance.interceptors.request.use(async req =>{
                     localStorage.removeItem("refresh");
                     
                   }
-                };
+                }
             }
         }
         
         return req
-    }
-)
+    })
 
 
 
