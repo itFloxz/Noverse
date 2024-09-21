@@ -1,9 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { pdfjs } from 'react-pdf';
+import * as pdfjsLib from 'pdfjs-dist/webpack'; // Correct import for pdfjs
 import axios from 'axios';
-import * as pdfjsLib from "pdfjs-dist/webpack"; // นำเข้า worker ที่คุณสร้างเอง
 
 const FileUploadCrop = () => {
   const [file, setFile] = useState(null);
@@ -44,8 +43,8 @@ const FileUploadCrop = () => {
 
   const convertPdfToImage = async (pdfFile) => {
     try {
-      const pdf = await pdfjs.getDocument(URL.createObjectURL(pdfFile)).promise;
-      const page = await pdf.getPage(1);  // เลือกหน้าแรก
+      const pdf = await pdfjsLib.getDocument(URL.createObjectURL(pdfFile)).promise;
+      const page = await pdf.getPage(1);  // Choose the first page
       const viewport = page.getViewport({ scale: 1.5 });
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
