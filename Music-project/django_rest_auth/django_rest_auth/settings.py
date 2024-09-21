@@ -34,7 +34,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'accounts',
-    'corsheaders'
+    'corsheaders',
+    'music_algro'
 ]
 
 MIDDLEWARE = [
