@@ -1,12 +1,23 @@
 import environ
 from pathlib import Path
 from datetime import timedelta
+import os
 
 env = environ.Env(
     DEBUG=(bool,False)
 )
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# Media files (for uploaded files)
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
+
+# Static files (for static content)
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 
 environ.Env.read_env(BASE_DIR / '.env')

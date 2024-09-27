@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import * as pdfjsLib from 'pdfjs-dist/webpack'; // Correct import for pdfjs
+import * as pdfjsLib from 'pdfjs-dist/webpack';
 import axios from 'axios';
 
 const FileUploadCrop = () => {
@@ -11,6 +11,8 @@ const FileUploadCrop = () => {
   const [completedCrop, setCompletedCrop] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(null);  // To store PDF URL from backend
+  const [pngUrl, setPngUrl] = useState(null);  // To store PNG URL from backend
   const imgRef = useRef(null);
 
   const onFileChange = async (e) => {
@@ -44,8 +46,8 @@ const FileUploadCrop = () => {
   const convertPdfToImage = async (pdfFile) => {
     try {
       const pdf = await pdfjsLib.getDocument(URL.createObjectURL(pdfFile)).promise;
-      const page = await pdf.getPage(1);  // Choose the first page
-      const viewport = page.getViewport({ scale: 1.5 });
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 3 });
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       canvas.height = viewport.height;
@@ -65,7 +67,7 @@ const FileUploadCrop = () => {
 
   const makeClientCrop = async (crop) => {
     if (imgRef.current && crop.width && crop.height) {
-      createCropPreview(imgRef.current, crop, 'newFile.jpeg');
+      createCropPreview(imgRef.current, crop, 'newFile.png');
     }
   };
 
@@ -98,30 +100,46 @@ const FileUploadCrop = () => {
         blob.name = fileName;
         window.URL.revokeObjectURL(previewUrl);
         setPreviewUrl(window.URL.createObjectURL(blob));
-      }, 'image/jpeg');
+      }, 'image/png');
     });
   };
 
   const handleSubmit = () => {
     if (previewUrl) {
       setIsLoading(true);
-      axios
-        .post('http://localhost:8000/upload', { image: previewUrl })
-        .then((res) => {
-          console.log(res.data);
-        })
-        .catch((err) => {
-          console.error(err);
-        })
-        .finally(() => {
-          setIsLoading(false);
+      
+      const formData = new FormData();
+  
+      // Append the cropped image blob
+      fetch(previewUrl)
+        .then(res => res.blob())
+        .then((blob) => {
+          formData.append('file', blob, 'cropped_image.png');  // Make sure 'file' matches the backend field name
+  
+          axios
+            .post('http://localhost:8000/api/v1/process-music-ocr/', formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+            })
+            .then((res) => {
+              console.log(res.data);
+              setPdfUrl(res.data.pdf_url);  // Assuming backend sends PDF URL
+              setPngUrl(res.data.png_url);  // Assuming backend sends PNG URL
+            })
+            .catch((err) => {
+              console.error(err);
+            })
+            .finally(() => {
+              setIsLoading(false);
+            });
         });
     }
   };
 
   return (
     <div>
-      <h2>Upload and Crop Image or PDF</h2>
+      <h2>Convert Thai to Nation</h2>
 
       <input type="file" accept="image/*,application/pdf" onChange={onFileChange} disabled={isLoading} />
 
@@ -154,11 +172,7 @@ const FileUploadCrop = () => {
               <img 
                 src={previewUrl} 
                 alt="Crop preview" 
-                style={{ 
-                  maxWidth: '100%', 
-                  width: '100%', 
-                  height: 'auto'
-                }} 
+                style={{ maxWidth: '100%', width: '100%', height: 'auto' }} 
               />
             </div>
           )}
@@ -168,6 +182,21 @@ const FileUploadCrop = () => {
       <button onClick={handleSubmit} style={{ marginTop: '20px' }} disabled={isLoading || !previewUrl}>
         {isLoading ? 'กำลังอัปโหลด...' : 'อัปโหลด'}
       </button>
+
+      {/* Display the generated PDF and PNG */}
+      {pdfUrl && (
+        <div style={{ marginTop: '20px' }}>
+          <h3>Generated Music Score PDF:</h3>
+          <a href={pdfUrl} target="_blank" rel="noopener noreferrer">Download PDF</a>
+        </div>
+      )}
+
+      {pngUrl && (
+        <div style={{ marginTop: '20px' }}>
+          <h3>Generated Music Score PNG:</h3>
+          <img src={pngUrl} alt="Generated Music Score" style={{ maxWidth: '100%' }} />
+        </div>
+      )}
 
       <style jsx>{`
         .spinner {
