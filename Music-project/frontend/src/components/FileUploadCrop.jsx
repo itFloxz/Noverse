@@ -38,6 +38,8 @@ const FileUploadCrop = () => {
           console.error('Error converting PDF:', error);
         } finally {
           setIsLoading(false);
+          setPdfUrl(null);
+          setPngUrl(null);
         }
       }
     }
@@ -137,6 +139,21 @@ const FileUploadCrop = () => {
     }
   };
 
+  const handleDownload = (url, filename) => {
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      })
+      .catch(error => console.error('Download failed:', error));
+  };
+  
+
   return (
     <div>
       <h2>Convert Thai to Nation</h2>
@@ -146,7 +163,7 @@ const FileUploadCrop = () => {
       {isLoading && (
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <div className="spinner"></div>
-          <p>กำลังประมวลผล...</p>
+          <p>Processing...</p>
         </div>
       )}
 
@@ -154,6 +171,7 @@ const FileUploadCrop = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
           {imagePreview && (
             <div style={{ width: '45%' }}>
+              <h3>Original</h3>
               <ReactCrop
                 src={imagePreview}
                 onImageLoaded={imgRef.current}
@@ -180,23 +198,34 @@ const FileUploadCrop = () => {
       )}
 
       <button onClick={handleSubmit} style={{ marginTop: '20px' }} disabled={isLoading || !previewUrl}>
-        {isLoading ? 'กำลังอัปโหลด...' : 'อัปโหลด'}
+        {isLoading ? 'Downloading...' : 'Upload'}
       </button>
 
       {/* Display the generated PDF and PNG */}
       {pdfUrl && (
-        <div style={{ marginTop: '20px' }}>
-          <h3>Generated Music Score PDF:</h3>
-          <a href={pdfUrl} target="_blank" rel="noopener noreferrer">Download PDF</a>
-        </div>
-      )}
+  <div style={{ marginTop: '20px' }}>
+    <h3>Generated Music Score PDF:</h3>
+    <button onClick={() => handleDownload(pdfUrl, 'music_score.pdf')}>
+      Download PDF
+    </button>
+  </div>
+)}
 
-      {pngUrl && (
-        <div style={{ marginTop: '20px' }}>
-          <h3>Generated Music Score PNG:</h3>
-          <img src={pngUrl} alt="Generated Music Score" style={{ maxWidth: '100%' }} />
-        </div>
-      )}
+{pngUrl && (
+  <div style={{ marginTop: '20px' }}>
+    <h3>Generated Music Score PNG:</h3>
+    <img 
+      src={`${pngUrl}?t=${new Date().getTime()}`}  // Add a cache-busting query parameter
+      alt="Generated Music Score" 
+      style={{ maxWidth: '100%' }} 
+    />
+    <br />
+    <button onClick={() => handleDownload(pngUrl, 'music_score.png')}>
+      Download PNG
+    </button>
+  </div>
+)}
+
 
       <style jsx>{`
         .spinner {

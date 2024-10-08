@@ -4,7 +4,7 @@ import easyocr
 from django.conf import settings
 from django.http import JsonResponse
 from music21 import stream, note, environment, meter
-import fitz  # PyMuPDF
+import fitz
 from rest_framework.decorators import api_view
 from rest_framework.parsers import MultiPartParser
 from django.utils.text import get_valid_filename
@@ -66,13 +66,11 @@ def pdf_to_png(pdf_path, output_png_path):
     for page_number in range(len(pdf_document)):
         page = pdf_document.load_page(page_number)
         
-        # Render page to an image (pixmap)
+        
         pix = page.get_pixmap(dpi=600)
         
-        # Save the pixmap as a PNG image
         pix.save(f"{output_png_path}_{page_number}.png")
     
-    # Close the PDF document
     pdf_document.close()
 
 @api_view(['POST'])
@@ -131,7 +129,7 @@ def process_music_ocr(request):
     except Exception as e:
         return JsonResponse({"error": f"Failed to convert PDF to PNG: {str(e)}"}, status=500)
 
-    # Return the PDF and PNG file paths as URLs
+    
     pdf_url = request.build_absolute_uri(settings.MEDIA_URL + 'output_music_score.pdf')
     png_url = request.build_absolute_uri(settings.MEDIA_URL + 'output_music_score_0.png')
     
