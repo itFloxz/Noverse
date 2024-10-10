@@ -10,6 +10,8 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from rest_framework.permissions import AllowAny
+from django.conf import settings
+from django.core.mail import send_mail
 # Create your views here.
 
 class RegisterUserView(GenericAPIView):
@@ -26,7 +28,7 @@ class RegisterUserView(GenericAPIView):
             print(user)
             return Response({
                 'data': user,
-                'message':f'hi{user['first_name']} thanks for signing up a passcode has be sent to your email'
+                'message':f'hi {user['first_name']} thanks for signing up a passcode has be sent to your email'
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

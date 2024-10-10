@@ -1,5 +1,6 @@
 import os
 import re
+from PIL import Image, ImageFilter
 import easyocr
 from django.conf import settings
 from django.http import JsonResponse
@@ -11,6 +12,24 @@ from django.utils.text import get_valid_filename
 
 # Set the path to the MuseScore executable
 environment.set('musescoreDirectPNGPath', r'C:\Program Files\MuseScore 4\bin\MuseScore4.exe')
+
+def enhance_image(image_path):
+    """
+    Enhance the clarity of the image by applying sharpening filters.
+    """
+    try:
+        with Image.open(image_path) as img:
+            # Apply a sharpening filter
+            sharpened_image = img.filter(ImageFilter.SHARPEN)
+            
+            # Save the sharpened image
+            sharpened_image_path = os.path.splitext(image_path)[0] + '_sharpened.png'
+            sharpened_image.save(sharpened_image_path)
+            
+            return sharpened_image_path
+    except Exception as e:
+        print(f"Failed to enhance image: {e}")
+        return None
 
 def correct_text(detected_text):
     correction_map = {
@@ -95,11 +114,16 @@ def process_music_ocr(request):
     except IOError as e:
         return JsonResponse({"error": f"Failed to save file: {str(e)}"}, status=500)
 
-    # Perform OCR using EasyOCR
-    reader = easyocr.Reader(['th'])
-    ocr_results = reader.readtext(file_path, detail=0, allowlist="ดรมฟซลท-ฺํุู")
+    # Enhance the image quality
+    sharpened_image_path = enhance_image(file_path)
+    if not sharpened_image_path:
+        return JsonResponse({"error": "Failed to enhance image"}, status=500)
 
-    # Correct OCR results and convert to universal format
+    # Perform OCR using EasyOCR on the sharpened image
+    reader = easyocr.Reader(['th'])
+    ocr_results = reader.readtext(sharpened_image_path, detail=0,allowlist="ดรมฟซลท-ฺํุู")
+
+    # Further processing (same as your original code)
     corrected_results = [correct_text(line) for line in ocr_results]
     universal_results = {f"box_{i}": transform_to_universal_format(line) for i, line in enumerate(corrected_results)}
 
@@ -107,15 +131,13 @@ def process_music_ocr(request):
     note_pattern = re.compile(r'C#?4|D#?4|E#?4|F#?4|G#?4|A#?4|B#?4|C#?5|D#?5|E#?5|F#?5|G#?5|A#?5|B#?5|-')
     extracted_elements = [elem for text in universal_results.values() for elem in extract_music_elements(text, note_pattern)]
 
-    # Map sharps to natural notes
+    # Create and save the music score
     natural_note_mapping = {
         'C#4': 'C4', 'D#4': 'D4', 'E#4': 'E4', 'F#4': 'F4',
         'G#4': 'G4', 'A#4': 'A4', 'B#4': 'B4', 'C#5': 'C5',
         'D#5': 'D5', 'E#5': 'E5', 'F#5': 'F5', 'G#5': 'G5',
         'A#5': 'A5', 'B#5': 'B5'
     }
-
-    # Create and save the music score
     score = create_music_score(extracted_elements, natural_note_mapping)
     pdf_output = os.path.join(settings.MEDIA_ROOT, 'output_music_score.pdf')
     try:
@@ -129,7 +151,6 @@ def process_music_ocr(request):
     except Exception as e:
         return JsonResponse({"error": f"Failed to convert PDF to PNG: {str(e)}"}, status=500)
 
-    
     pdf_url = request.build_absolute_uri(settings.MEDIA_URL + 'output_music_score.pdf')
     png_url = request.build_absolute_uri(settings.MEDIA_URL + 'output_music_score_0.png')
     
