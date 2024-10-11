@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { toast } from 'react-toastify'
 import axiosInstance from '../utlils/axiosInstance'
 
-const ForgetPassword = () => {
+const PasswordResetRequest = () => {
     const [email, setEmail]=useState("")
 
     const handleSubmit = async(e)=>{
@@ -43,4 +43,4 @@ const ForgetPassword = () => {
   )
 }
 
-export default ForgetPassword
+export default PasswordResetRequest
