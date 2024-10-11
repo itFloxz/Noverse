@@ -68,7 +68,6 @@ class TestAuthenticationView(GenericAPIView):
     def get(self,request):
         data={
             'msg':'its works'
-
         }
         return Response(data,status=status.HTTP_200_OK)
     
