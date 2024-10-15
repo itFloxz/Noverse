@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import Header from "./Header"
 
 const Signup = () => {
   const navigate = useNavigate()
@@ -46,6 +47,7 @@ const handleSubmit = async (e)=>{
 
   return (
     <div>
+      <Header></Header>
       <div className="form-container">
         <div style={{ width: "100%" }} className="wrapper">
           <h2>Create Account</h2>

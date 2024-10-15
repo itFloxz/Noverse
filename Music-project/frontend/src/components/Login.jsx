@@ -2,6 +2,8 @@ import axios from "axios";
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate,Link } from "react-router-dom";
+import Header from "./Header"
+
 
 const Login = () => {
   const navigate=useNavigate()
@@ -42,6 +44,7 @@ const Login = () => {
   }
   return (
     <div>
+    {/* <Header></Header>   */}
       <div className="form-container">
         <div style={{ width: "100%" }} className="wrapper">
           <form onSubmit={handleSubmit}>
@@ -60,6 +63,7 @@ const Login = () => {
             </div>
 
             <input type="submit" value="Login" className="submitButton" />
+            <p><a href="/signup">Register</a></p>
             <p className='pass-link'><Link to={'/forget_password'}>forgot password</Link></p>
           </form>
         </div>

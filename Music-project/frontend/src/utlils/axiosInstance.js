@@ -18,16 +18,7 @@ const axiosInstance = axios.create({
   },
 });
 
-// axios.post(
-//   'http://localhost:8000/api/v1/process-music-ocr/',
-//   formData,
-//   {
-//     headers: {
-//       'Content-Type': 'multipart/form-data',
-//       'Authorization': `Token ${token}`,
-//     },
-//   }
-// )
+
 
 
 axiosInstance.interceptors.request.use(async req =>{

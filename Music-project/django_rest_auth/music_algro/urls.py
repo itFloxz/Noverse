@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import process_music_ocr
 
+from . import views
 urlpatterns = [
-    path('process-music-ocr/', process_music_ocr, name='process_music_ocr'),
+    path('process-music-ocr/', views.process_music_ocr, name='process_music_ocr'),
 ]

@@ -9,9 +9,14 @@ import fitz
 from rest_framework.decorators import api_view
 from rest_framework.parsers import MultiPartParser
 from django.utils.text import get_valid_filename
+from rest_framework.permissions import IsAuthenticated
+from .models import MusicFile
+from rest_framework.decorators import api_view, permission_classes
 
 # Set the path to the MuseScore executable
 environment.set('musescoreDirectPNGPath', r'C:\Program Files\MuseScore 4\bin\MuseScore4.exe')
+
+    
 
 def enhance_image(image_path):
     """
@@ -93,6 +98,7 @@ def pdf_to_png(pdf_path, output_png_path):
     pdf_document.close()
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def process_music_ocr(request):
     parser_classes = (MultiPartParser,)
     
@@ -106,7 +112,6 @@ def process_music_ocr(request):
     # Ensure the directory exists
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-    # Save the uploaded file
     try:
         with open(file_path, 'wb+') as f:
             for chunk in file.chunks():
@@ -114,24 +119,19 @@ def process_music_ocr(request):
     except IOError as e:
         return JsonResponse({"error": f"Failed to save file: {str(e)}"}, status=500)
 
-    # Enhance the image quality
     sharpened_image_path = enhance_image(file_path)
     if not sharpened_image_path:
         return JsonResponse({"error": "Failed to enhance image"}, status=500)
 
-    # Perform OCR using EasyOCR on the sharpened image
     reader = easyocr.Reader(['th'])
-    ocr_results = reader.readtext(sharpened_image_path, detail=0,allowlist="ดรมฟซลท-ฺํุู")
+    ocr_results = reader.readtext(sharpened_image_path, detail=0, allowlist="ดรมฟซลท-ฺํุู")
 
-    # Further processing (same as your original code)
     corrected_results = [correct_text(line) for line in ocr_results]
     universal_results = {f"box_{i}": transform_to_universal_format(line) for i, line in enumerate(corrected_results)}
 
-    # Extract musical notes and rests from the universal format
     note_pattern = re.compile(r'C#?4|D#?4|E#?4|F#?4|G#?4|A#?4|B#?4|C#?5|D#?5|E#?5|F#?5|G#?5|A#?5|B#?5|-')
     extracted_elements = [elem for text in universal_results.values() for elem in extract_music_elements(text, note_pattern)]
 
-    # Create and save the music score
     natural_note_mapping = {
         'C#4': 'C4', 'D#4': 'D4', 'E#4': 'E4', 'F#4': 'F4',
         'G#4': 'G4', 'A#4': 'A4', 'B#4': 'B4', 'C#5': 'C5',
@@ -140,12 +140,12 @@ def process_music_ocr(request):
     }
     score = create_music_score(extracted_elements, natural_note_mapping)
     pdf_output = os.path.join(settings.MEDIA_ROOT, 'output_music_score.pdf')
+    
     try:
         score.write('musicxml.pdf', pdf_output)
     except Exception as e:
         return JsonResponse({"error": f"Failed to create PDF: {str(e)}"}, status=500)
 
-    # Convert the PDF to PNG
     try:
         pdf_to_png(pdf_output, os.path.join(settings.MEDIA_ROOT, 'output_music_score'))
     except Exception as e:
@@ -153,7 +153,16 @@ def process_music_ocr(request):
 
     pdf_url = request.build_absolute_uri(settings.MEDIA_URL + 'output_music_score.pdf')
     png_url = request.build_absolute_uri(settings.MEDIA_URL + 'output_music_score_0.png')
-    
+
+    # บันทึกข้อมูลไฟล์และผู้ใช้ลงฐานข้อมูล
+    music_file = MusicFile(
+        user=request.user,
+        original_file_name=file_name,
+        pdf_file_path=pdf_output,
+        png_file_path=os.path.join(settings.MEDIA_ROOT, 'output_music_score_0.png')
+    )
+    music_file.save()
+
     return JsonResponse({
         "message": "Processing complete",
         "pdf_url": pdf_url,

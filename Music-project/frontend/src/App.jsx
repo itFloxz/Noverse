@@ -16,7 +16,8 @@ function App() {
       <Router>
       <ToastContainer/>
         <Routes>
-          <Route path='/' element={<Signup />} />
+          <Route path='/' element={<FileUploadCrop />} />
+          <Route path='/signup' element={<Signup />} />
           <Route path='/login' element={<Login />} />
           <Route path='/dashboard' element={<Profile />} />
           <Route path='/otp/verify' element={<VerifyEmail />} />

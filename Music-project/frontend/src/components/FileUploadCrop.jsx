@@ -3,8 +3,10 @@ import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import * as pdfjsLib from 'pdfjs-dist/webpack';
 import axios from 'axios';
+import Header from "./Header"
 
 const FileUploadCrop = () => {
+  const [input, setInput] = useState(true);
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [crop, setCrop] = useState({ unit: '%', width: 30, aspect: 16 / 9 });
@@ -14,6 +16,10 @@ const FileUploadCrop = () => {
   const [pdfUrl, setPdfUrl] = useState(null);  // To store PDF URL from backend
   const [pngUrl, setPngUrl] = useState(null);  // To store PNG URL from backend
   const imgRef = useRef(null);
+  
+
+
+
 
   const onFileChange = async (e) => {
     e.preventDefault();
@@ -28,6 +34,7 @@ const FileUploadCrop = () => {
         reader.onload = () => {
           setImagePreview(reader.result);
           setIsLoading(false);
+          setInput(false)
         };
         reader.readAsDataURL(selectedFile);
       } else if (selectedFile.type === 'application/pdf') {
@@ -38,8 +45,8 @@ const FileUploadCrop = () => {
           console.error('Error converting PDF:', error);
         } finally {
           setIsLoading(false);
-          setPdfUrl(null);
-          setPngUrl(null);
+          // setPdfUrl(null);
+          // setPngUrl(null);
         }
       }
     }
@@ -110,19 +117,20 @@ const FileUploadCrop = () => {
     if (previewUrl) {
       setIsLoading(true);
       
+      const token = localStorage.getItem('access') ? JSON.parse(localStorage.getItem('access')) : null;
       const formData = new FormData();
-  
+      console.log(token)
       // Append the cropped image blob
       fetch(previewUrl)
         .then(res => res.blob())
         .then((blob) => {
           formData.append('file', blob, 'cropped_image.png');  // Make sure 'file' matches the backend field name
   
-          axios
-            .post('http://localhost:8000/api/v1/process-music-ocr/', formData, {
-              headers: {
-                'Content-Type': 'multipart/form-data'
-              }
+          axios.post('http://localhost:8000/api/v1/process-music-ocr/', formData, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
+            }
             })
             .then((res) => {
               console.log(res.data);
@@ -155,10 +163,11 @@ const FileUploadCrop = () => {
   
 
   return (
-    <div>
+    <div style={{display:""}}> 
+   <Header ></Header>
       <h2>Convert Thai to Nation</h2>
-
-      <input type="file" accept="image/*,application/pdf" onChange={onFileChange} disabled={isLoading} />
+      <div style={{display: "center",}}>
+      {(<input type="file" accept="image/*,application/pdf" onChange={onFileChange} disabled={isLoading} />)}
 
       {isLoading && (
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
@@ -185,7 +194,7 @@ const FileUploadCrop = () => {
           )}
 
           {previewUrl && (
-            <div style={{ width: '45%' }}>
+            <div style={{ width: '50%' }}>
               <h3>Preview</h3>
               <img 
                 src={previewUrl} 
@@ -203,13 +212,17 @@ const FileUploadCrop = () => {
 
       {/* Display the generated PDF and PNG */}
       {pdfUrl && (
-  <div style={{ marginTop: '20px' }}>
+  <div style={{ marginTop: '20px',justifyContent:'space-evenly',}}>
     <h3>Generated Music Score PDF:</h3>
     <button onClick={() => handleDownload(pdfUrl, 'music_score.pdf')}>
       Download PDF
     </button>
+    <button onClick={() => handleDownload(pngUrl, 'music_score.png')}>
+      Download PNG
+    </button>
   </div>
-)}
+  
+)}</div>
 
 {pngUrl && (
   <div style={{ marginTop: '20px' }}>
@@ -217,14 +230,14 @@ const FileUploadCrop = () => {
     <img 
       src={`${pngUrl}?t=${new Date().getTime()}`}  // Add a cache-busting query parameter
       alt="Generated Music Score" 
-      style={{ maxWidth: '100%' }} 
+      style={{ maxWidth: '100%',overflowY:'auto' }} 
     />
     <br />
-    <button onClick={() => handleDownload(pngUrl, 'music_score.png')}>
-      Download PNG
-    </button>
+    
   </div>
 )}
+
+
 
 
       <style jsx>{`
