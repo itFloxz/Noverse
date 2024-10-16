@@ -97,17 +97,30 @@ def pdf_to_png(pdf_path, output_png_path):
     
     pdf_document.close()
 
+from datetime import datetime
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def process_music_ocr(request):
     parser_classes = (MultiPartParser,)
-    
+
     if 'file' not in request.FILES:
         return JsonResponse({"error": "No file provided"}, status=400)
 
     file = request.FILES['file']
-    file_name = get_valid_filename(file.name)
-    file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+    original_file_name = get_valid_filename(file.name)
+
+    # Generate a timestamp and username to create a unique file name
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    username = request.user.email  # Assuming the user model has a username field
+
+    # Create a unique file name based on user and timestamp
+    base_file_name = f"{username}_{timestamp}"
+
+    # Define file paths
+    file_path = os.path.join(settings.MEDIA_ROOT, f"{base_file_name}_original_{original_file_name}")
+    pdf_output = os.path.join(settings.MEDIA_ROOT, f"{base_file_name}_output_music_score.pdf")
+    png_output_path = os.path.join(settings.MEDIA_ROOT, f"{base_file_name}_output_music_score")
 
     # Ensure the directory exists
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -123,6 +136,7 @@ def process_music_ocr(request):
     if not sharpened_image_path:
         return JsonResponse({"error": "Failed to enhance image"}, status=500)
 
+    # OCR processing
     reader = easyocr.Reader(['th'])
     ocr_results = reader.readtext(sharpened_image_path, detail=0, allowlist="ดรมฟซลท-ฺํุู")
 
@@ -139,7 +153,6 @@ def process_music_ocr(request):
         'A#5': 'A5', 'B#5': 'B5'
     }
     score = create_music_score(extracted_elements, natural_note_mapping)
-    pdf_output = os.path.join(settings.MEDIA_ROOT, 'output_music_score.pdf')
     
     try:
         score.write('musicxml.pdf', pdf_output)
@@ -147,19 +160,20 @@ def process_music_ocr(request):
         return JsonResponse({"error": f"Failed to create PDF: {str(e)}"}, status=500)
 
     try:
-        pdf_to_png(pdf_output, os.path.join(settings.MEDIA_ROOT, 'output_music_score'))
+        pdf_to_png(pdf_output, png_output_path)
     except Exception as e:
         return JsonResponse({"error": f"Failed to convert PDF to PNG: {str(e)}"}, status=500)
 
-    pdf_url = request.build_absolute_uri(settings.MEDIA_URL + 'output_music_score.pdf')
-    png_url = request.build_absolute_uri(settings.MEDIA_URL + 'output_music_score_0.png')
+    # Construct URLs
+    pdf_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_file_name}_output_music_score.pdf")
+    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_file_name}_output_music_score_0.png")
 
-    # บันทึกข้อมูลไฟล์และผู้ใช้ลงฐานข้อมูล
+    # Save file information and user to the database
     music_file = MusicFile(
         user=request.user,
-        original_file_name=file_name,
+        original_file_name=original_file_name,
         pdf_file_path=pdf_output,
-        png_file_path=os.path.join(settings.MEDIA_ROOT, 'output_music_score_0.png')
+        png_file_path=f"{png_output_path}_0.png"
     )
     music_file.save()
 
