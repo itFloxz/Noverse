@@ -1,12 +1,12 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback,useEffect } from 'react';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import * as pdfjsLib from 'pdfjs-dist/webpack';
 import axios from 'axios';
 import Header from "./Header"
+import { useNavigate } from "react-router-dom";
 
 const FileUploadCrop = () => {
-  const [input, setInput] = useState(true);
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [crop, setCrop] = useState({ unit: '%', width: 30, aspect: 16 / 9 });
@@ -16,9 +16,20 @@ const FileUploadCrop = () => {
   const [pdfUrl, setPdfUrl] = useState(null);  // To store PDF URL from backend
   const [pngUrl, setPngUrl] = useState(null);  // To store PNG URL from backend
   const imgRef = useRef(null);
-  
+  const navigate = useNavigate();
+
+  // useEffect(() => {
+  //   const token = JSON.parse(localStorage.getItem('access') || 'null');
+  //   if (!token) {
+  //     alert('Session expired. Please log in again.');
+  //     navigate('/login'); // นำทางไปยังหน้าเข้าสู่ระบบ
+  //   }
+  // }, [navigate]);
 
 
+  useEffect(() => {
+    return () => previewUrl && URL.revokeObjectURL(previewUrl); // Cleanup URL
+  }, [previewUrl]);
 
 
   const onFileChange = async (e) => {
@@ -113,13 +124,15 @@ const FileUploadCrop = () => {
     });
   };
 
+
+
   const handleSubmit = () => {
     if (previewUrl) {
       setIsLoading(true);
       
       const token = localStorage.getItem('access') ? JSON.parse(localStorage.getItem('access')) : null;
       const formData = new FormData();
-      console.log(token)
+  
       // Append the cropped image blob
       fetch(previewUrl)
         .then(res => res.blob())
@@ -127,25 +140,24 @@ const FileUploadCrop = () => {
           formData.append('file', blob, 'cropped_image.png');  // Make sure 'file' matches the backend field name
   
           axios.post('http://localhost:8000/api/v1/process-music-ocr/', formData, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'multipart/form-data'
-            }
-            })
-            .then((res) => {
-              console.log(res.data);
-              setPdfUrl(res.data.pdf_url);  // Assuming backend sends PDF URL
-              setPngUrl(res.data.png_url);  // Assuming backend sends PNG URL
-            })
-            .catch((err) => {
-              console.error(err);
-            })
-            .finally(() => {
-              setIsLoading(false);
-            });
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            'Content-Type': 'multipart/form-data'
+          })
+          .then((res) => {
+            console.log(res.data);
+            setPdfUrl(res.data.pdf_url);  // Set the PDF URL from backend
+            setPngUrl(res.data.png_url);  // Set the PNG URL from backend
+          })
+          .catch((err) => {
+            console.error(err);
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
         });
     }
   };
+  
 
   const handleDownload = (url, filename) => {
     fetch(url)
@@ -212,12 +224,12 @@ const FileUploadCrop = () => {
 
       {/* Display the generated PDF and PNG */}
       {pdfUrl && (
-  <div style={{ marginTop: '20px',justifyContent:'space-evenly',}}>
+  <div style={{ marginTop: '20px',justifyContent:'space-evenly',gap:'10px'}}>
     <h3>Generated Music Score PDF:</h3>
-    <button onClick={() => handleDownload(pdfUrl, 'music_score.pdf')}>
+    <button onClick={() => handleDownload(pdfUrl, 'music_score.pdf')} style={{ padding: '10px 20px',marginRight:'10px' }} >
       Download PDF
     </button>
-    <button onClick={() => handleDownload(pngUrl, 'music_score.png')}>
+    <button onClick={() => handleDownload(pngUrl, 'music_score.png')} style={{ padding: '10px 20px',marginRight:'10px' ,}} >
       Download PNG
     </button>
   </div>
