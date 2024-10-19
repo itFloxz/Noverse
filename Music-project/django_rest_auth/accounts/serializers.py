@@ -61,7 +61,7 @@ class LoginSerializer(serializers.ModelSerializer):
 
         return {
             'email': user.email,
-            'full_name': user.get_full_name(),
+            'full_name': user.get_full_name,
             'access_token': str(user_tokens.get('access')),
             'refresh_token': str(user_tokens.get('refresh')),
         }
@@ -98,7 +98,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             <p>We received a request to reset the password for your account. If you made this request, please click the button below to reset your password:</p>
 
             <p style="text-align: center;">
-              <a href="{{abslink}}" style="
+              <a href="{abslink}" style="
                   background-color: #001F3F;
                   color: white;
                   padding: 15px 25px;

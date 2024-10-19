@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 
 urlpatterns = [
-    path('register/', RegisterUserView.as_view(), name='register'),  # Ensure trailing slash here
+    path('register/', RegisterUserView.as_view(), name='register'),
     path('verify-email/',VerifyUserEmail.as_view(),name='verify'),
     path('login/',LoginUserView.as_view(),name='login'),
     path('profile/',TestAuthenticationView.as_view(),name='granted'),

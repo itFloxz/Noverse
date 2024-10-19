@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utlils/axiosInstance";
 import { toast } from "react-toastify";
+import Header from "./Header"
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -42,7 +43,8 @@ const Profile = () => {
 
   return (
     <div>
-      <h2>hi {user && user.full_name}</h2>
+      <Header></Header>
+      <h2>hi {user?.names}</h2>
       <p style={{ textAlign: "center" }}>welcome to your profile</p>
       <button onClick={handlelogout} className="logout-btn">
         Logout

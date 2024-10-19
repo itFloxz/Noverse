@@ -34,3 +34,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.pyc
+/Music-project/django_rest_auth/accounts/__pycache__
