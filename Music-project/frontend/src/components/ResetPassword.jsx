@@ -18,7 +18,7 @@ export const ResetPassword = () => {
     const data = {
         'password': newpasswords.password,
         'confirm_password': newpasswords.confirm_password,
-        'uid64': uid,
+        'uidb64': uid,
         'token': token
     };
 
@@ -26,7 +26,7 @@ export const ResetPassword = () => {
         e.preventDefault();
         //API call
         try {
-            const response = await axiosInstance.patch('/auth/set-new-password', data);
+            const response = await axiosInstance.patch('/auth/set-new-password/', data);
             const result = response.data;
             if (response.status === 200) {
                 navigate('/login');
