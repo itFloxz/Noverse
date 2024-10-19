@@ -8,10 +8,12 @@ from django.http import JsonResponse
 from django.utils.text import get_valid_filename
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from music21 import stream, note, environment, meter
 import fitz
 from .models import MusicFile
+from .serializers import MusicFileSerializer
+from rest_framework.response import Response
 
 # Set MuseScore path globally
 environment.set('musescoreDirectPNGPath', r'C:\Program Files\MuseScore 4\bin\MuseScore4.exe')
@@ -85,7 +87,7 @@ def pdf_to_png(pdf_path, output_path):
     pdf.close()
 
 @api_view(['POST'])
-@permission_classes([])  # Remove IsAuthenticated to allow public access
+@permission_classes([AllowAny])  # Allow public access
 def process_music_ocr(request):
     """Processes uploaded music files through OCR and generates outputs."""
     if 'file' not in request.FILES:
@@ -94,18 +96,14 @@ def process_music_ocr(request):
     file = request.FILES['file']
     original_name = get_valid_filename(file.name)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # If user is logged in, get their email; otherwise, use 'guest'
     username = request.user.email if request.user.is_authenticated else 'guest'
 
-    # Create unique file names and paths
     base_name = f"{username}_{timestamp}"
     media_root = settings.MEDIA_ROOT
     file_path = os.path.join(media_root, f"{base_name}_original_{original_name}")
     pdf_output = os.path.join(media_root, f"{base_name}_output_music_score.pdf")
     png_output = os.path.join(media_root, f"{base_name}_output_music_score")
 
-    # Save the uploaded file
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     try:
         with open(file_path, 'wb+') as f:
@@ -118,17 +116,14 @@ def process_music_ocr(request):
     if not sharpened_image:
         return JsonResponse({"error": "Failed to enhance image"}, status=500)
 
-    # OCR processing
     reader = easyocr.Reader(['th'])
     ocr_results = reader.readtext(sharpened_image, detail=0, allowlist="ดรมฟซลท-ฺํุู")
     corrected = [correct_text(line) for line in ocr_results]
     universal_results = {f"box_{i}": transform_to_universal_format(line) for i, line in enumerate(corrected)}
 
-    # Extract musical elements
     pattern = re.compile(r'C#?4|D#?4|E#?4|F#?4|G#?4|A#?4|B#?4|C#?5|D#?5|E#?5|F#?5|G#?5|A#?5|B#?5|-')
     elements = [elem for text in universal_results.values() for elem in extract_music_elements(text, pattern)]
 
-    # Create and save the music score
     natural_mapping = {f"{n}#4": f"{n}4" for n in "CDEFGAB"} | {f"{n}#5": f"{n}5" for n in "CDEFGAB"}
     score = create_music_score(elements, natural_mapping)
 
@@ -142,21 +137,23 @@ def process_music_ocr(request):
     except Exception as e:
         return JsonResponse({"error": f"Failed to convert PDF to PNG: {e}"}, status=500)
 
-    # Save to database only if the user is authenticated
+    pdf_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}_output_music_score.pdf")
+    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}_output_music_score_0.png")
+
     if request.user.is_authenticated:
         MusicFile.objects.create(
             user=request.user,
             original_file_name=original_name,
-            pdf_file_path=pdf_output,
-            png_file_path=f"{png_output}_0.png"
+            pdf_file_path=pdf_url,
+            png_file_path=png_url
         )
 
-    pdf_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}_output_music_score.pdf")
-    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}_output_music_score_0.png")
+    return JsonResponse({"message": "Processing complete", "pdf_url": pdf_url, "png_url": png_url})
 
-    return JsonResponse({
-        "message": "Processing complete",
-        "pdf_url": pdf_url,
-        "png_url": png_url,
-    })
-
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_music_history(request):
+    user = request.user  # ดึง user ที่ทำการ authenticated
+    music_files = MusicFile.objects.filter(user=user).order_by('-created_at')  # เรียงตามวันที่ล่าสุด
+    serializer = MusicFileSerializer(music_files, many=True)
+    return Response(serializer.data)
