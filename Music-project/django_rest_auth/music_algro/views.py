@@ -1,7 +1,7 @@
 import os
 import re
 from datetime import datetime
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter ,ImageEnhance
 import easyocr
 from django.conf import settings
 from django.http import JsonResponse
@@ -18,17 +18,37 @@ from rest_framework.response import Response
 # Set MuseScore path globally
 environment.set('musescoreDirectPNGPath', r'C:\Program Files\MuseScore 4\bin\MuseScore4.exe')
 
-def enhance_image(image_path):
-    """Enhances the image by applying a sharpening filter."""
+def enhance_image_advanced(image_path, sharpness_factor=2.0, contrast_factor=1.5):
+    """Enhances the image by adjusting sharpness, converting to grayscale, and increasing contrast."""
     try:
-        img = Image.open(image_path)
-        sharpened_image = img.filter(ImageFilter.SHARPEN)
-        sharpened_image_path = f"{os.path.splitext(image_path)[0]}_sharpened.png"
-        sharpened_image.save(sharpened_image_path)
-        return sharpened_image_path
+        if not os.path.isfile(image_path):
+            raise FileNotFoundError(f"Image not found: {image_path}")
+
+        # เปิดภาพและแปลงเป็น Grayscale
+        img = Image.open(image_path).convert("L")
+
+        # ปรับความคมชัด (Sharpness)
+        sharpener = ImageEnhance.Sharpness(img)
+        sharpened_img = sharpener.enhance(sharpness_factor)
+
+        # เพิ่ม Contrast
+        contrast = ImageEnhance.Contrast(sharpened_img)
+        enhanced_img = contrast.enhance(contrast_factor)
+
+        # บันทึกภาพที่ปรับปรุงแล้ว
+        enhanced_image_path = f"{os.path.splitext(image_path)[0]}_enhanced_advanced.png"
+        enhanced_img.save(enhanced_image_path)
+
+        print(f"Enhanced image saved at: {enhanced_image_path}")
+        return enhanced_image_path
+
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
     except Exception as e:
         print(f"Failed to enhance image: {e}")
-        return None
+
+    return None
+
 
 def correct_text(detected_text):
     """Applies specific corrections to the OCR output."""
@@ -87,7 +107,7 @@ def pdf_to_png(pdf_path, output_path):
     pdf.close()
 
 @api_view(['POST'])
-@permission_classes([AllowAny])  # Allow public access
+@permission_classes([AllowAny])
 def process_music_ocr(request):
     """Processes uploaded music files through OCR and generates outputs."""
     if 'file' not in request.FILES:
@@ -112,12 +132,14 @@ def process_music_ocr(request):
     except IOError as e:
         return JsonResponse({"error": f"Failed to save file: {e}"}, status=500)
 
-    sharpened_image = enhance_image(file_path)
-    if not sharpened_image:
+    # ปรับคมชัดและ contrast ของภาพ
+    enhanced_image = enhance_image_advanced(file_path, sharpness_factor=3.0, contrast_factor=2.0)
+    if not enhanced_image:
         return JsonResponse({"error": "Failed to enhance image"}, status=500)
 
+    # ใช้ easyocr อ่านข้อความในภาพ
     reader = easyocr.Reader(['th'])
-    ocr_results = reader.readtext(sharpened_image, detail=0, allowlist="ดรมฟซลท-ฺํุู")
+    ocr_results = reader.readtext(enhanced_image, detail=0, allowlist="ดรมฟซลท-ฺํุู")
     corrected = [correct_text(line) for line in ocr_results]
     universal_results = {f"box_{i}": transform_to_universal_format(line) for i, line in enumerate(corrected)}
 
@@ -149,6 +171,8 @@ def process_music_ocr(request):
         )
 
     return JsonResponse({"message": "Processing complete", "pdf_url": pdf_url, "png_url": png_url})
+
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

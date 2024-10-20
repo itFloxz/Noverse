@@ -5,6 +5,9 @@ import * as pdfjsLib from 'pdfjs-dist/webpack';
 import axios from 'axios';
 import Header from "./Header"
 import { useNavigate } from "react-router-dom";
+import { InboxOutlined } from '@ant-design/icons';
+import { message, Upload } from 'antd';
+const { Dragger } = Upload;
 
 const FileUploadCrop = () => {
   const [file, setFile] = useState(null);
@@ -178,7 +181,7 @@ const FileUploadCrop = () => {
     <div style={{display:""}}> 
    <Header ></Header>
       <h2>Convert Thai to Nation</h2>
-      <div style={{display: "center",}}>
+      <div style={{display: "center",}}> 
       {(<input type="file" accept="image/*,application/pdf" onChange={onFileChange} disabled={isLoading} />)}
 
       {isLoading && (
