@@ -7,6 +7,7 @@ import viteLogo from "/vite.svg";
 import {Signup, Login, Profile, VerifyEmail, ForgetPassword,FileUploadCrop,MusicHistory} from "./components";
 import "./App.css";
 import { ResetPassword } from "./components/ResetPassword";
+import Home from "./components/Home";
 
 function App() {
 
@@ -15,12 +16,13 @@ function App() {
       <Router>
       <ToastContainer/>
         <Routes>
-          <Route path='/' element={<FileUploadCrop />} />
+          <Route path='/' element={<Home />} />
           <Route path='/signup' element={<Signup />} />
           <Route path='/login' element={<Login />} />
           <Route path='/dashboard' element={<Profile />} />
           <Route path='/otp/verify' element={<VerifyEmail />} />
           <Route path='/forget_password' element={<ForgetPassword />} />
+          <Route path="/password-reset" element={<ResetPassword />} />
           <Route path='/password-reset-confirm/:uid/:token' element={<ResetPassword />}/>
           <Route path='/FileUploadCrop' element={<FileUploadCrop />}/>
           <Route path="/music-history" element={<MusicHistory />} />

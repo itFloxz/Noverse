@@ -185,14 +185,19 @@ const FileUploadCrop = () => {
       <h2>Convert Thai to Nation</h2>
       <div style={{display: "center",}}> 
       {(<input type="file" accept="image/*,application/pdf" onChange={onFileChange} disabled={isLoading} />)}
+      <div>
       <input
         type="text"
         placeholder="Enter Music Name"
         value={filename}
         onChange={(e) => setFilename(e.target.value)}
         required
-        style={{ marginTop: '10px', width: '100%' }}
+        style={{ marginTop: '10px', width: '95%', }}
       />
+<button onClick={handleSubmit} style={{ marginTop: '20px',height:'40px' }} disabled={isLoading || !previewUrl}>
+        {isLoading ? 'Downloading...' : 'Upload'}
+      </button>
+      </div>
 
       {isLoading && (
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
@@ -231,9 +236,6 @@ const FileUploadCrop = () => {
         </div>
       )}
 
-      <button onClick={handleSubmit} style={{ marginTop: '20px' }} disabled={isLoading || !previewUrl}>
-        {isLoading ? 'Downloading...' : 'Upload'}
-      </button>
 
       {/* Display the generated PDF and PNG */}
       {pdfUrl && pngUrl && (

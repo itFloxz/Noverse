@@ -24,13 +24,11 @@ export const ResetPassword = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        //API call
         try {
             const response = await axiosInstance.patch('/auth/set-new-password/', data);
-            const result = response.data;
             if (response.status === 200) {
                 navigate('/login');
-                toast.success(result.message);
+                toast.success("Password reset successfully!");
             }
         } catch (error) {
             toast.error("An error occurred while resetting the password.");
@@ -44,7 +42,7 @@ export const ResetPassword = () => {
                     <h2>Enter your New Password</h2>
                     <form onSubmit={handleSubmit}>
                         <div className='form-group'>
-                            <label htmlFor="">New Password:</label>
+                            <label>New Password:</label>
                             <input
                                 type="password"
                                 className='email-form'
@@ -54,7 +52,7 @@ export const ResetPassword = () => {
                             />
                         </div>
                         <div className='form-group'>
-                            <label htmlFor="">Confirm Password:</label>
+                            <label>Confirm Password:</label>
                             <input
                                 type="password"
                                 className='email-form'
@@ -63,6 +61,19 @@ export const ResetPassword = () => {
                                 onChange={handleChange}
                             />
                         </div>
+
+                        {/* Password Conditions */}
+                        <div className="password-conditions">
+                            <p>Password must:</p>
+                            <ul>
+                                <li>Be at least 8 characters long</li>
+                                <li>Contain at least one uppercase letter</li>
+                                <li>Contain at least one lowercase letter</li>
+                                <li>Contain at least one number</li>
+                                <li>Contain at least one special character (e.g., @, #, $)</li>
+                            </ul>
+                        </div>
+
                         <button type='submit' className='vbtn'>Submit</button>
                     </form>
                 </div>
