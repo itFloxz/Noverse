@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from "../utlils/axiosInstance"; // Adjust the path if necessary
-
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 const MusicHistory = () => {
   const [musicHistory, setMusicHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchMusicHistory = async () => {
       try {
@@ -12,8 +13,12 @@ const MusicHistory = () => {
         setMusicHistory(response.data);
       } catch (error) {
         console.error('Error fetching music history:', error);
+        toast.error("Please login again!?")
+        navigate("/login")
+
       } finally {
         setLoading(false);
+        
       }
     };
 

@@ -1,9 +1,9 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useState ,useEffect} from "react";
 import { toast } from "react-toastify";
 import { useNavigate,Link } from "react-router-dom";
-import Header from "./Header"
 
+import Header from "./Header"
 
 
 const Login = () => {
@@ -14,6 +14,15 @@ const Login = () => {
   })
   const [error, setError]=useState("")
   const [isLoading, setIsLoading]=useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('access');
+    if (token) {
+      navigate('/dashboard'); // เปลี่ยนไปหน้า dashboard ถ้ามี token
+    }
+  }, [navigate]); // เพิ่ม dependency เพื่อให้ navigate ทำงานอย่างถูกต้อง
+
+
 
   const handleOnChange = (e)=> {
     setLoginData({...logindata, [e.target.name]:e.target.value})
