@@ -36,3 +36,4 @@ dist-ssr
 *.sw?
 *.pyc
 /Music-project/django_rest_auth/accounts/__pycache__
+*.pyc
