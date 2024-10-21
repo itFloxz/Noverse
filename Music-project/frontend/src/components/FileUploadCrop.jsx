@@ -5,9 +5,6 @@ import * as pdfjsLib from 'pdfjs-dist/webpack';
 import axios from 'axios';
 import Header from "./Header"
 import { useNavigate } from "react-router-dom";
-import { InboxOutlined } from '@ant-design/icons';
-import { message, Upload } from 'antd';
-const { Dragger } = Upload;
 
 const FileUploadCrop = () => {
   const [file, setFile] = useState(null);
@@ -18,16 +15,9 @@ const FileUploadCrop = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);  // To store PDF URL from backend
   const [pngUrl, setPngUrl] = useState(null);  // To store PNG URL from backend
+  const [filename, setFilename] = useState('');  // State for filename input
   const imgRef = useRef(null);
   const navigate = useNavigate();
-
-  // useEffect(() => {
-  //   const token = JSON.parse(localStorage.getItem('access') || 'null');
-  //   if (!token) {
-  //     alert('Session expired. Please log in again.');
-  //     navigate('/login'); // นำทางไปยังหน้าเข้าสู่ระบบ
-  //   }
-  // }, [navigate]);
 
 
   useEffect(() => {
@@ -42,25 +32,36 @@ const FileUploadCrop = () => {
       const selectedFile = files[0];
       setFile(selectedFile);
       setIsLoading(true);
+      
 
       if (selectedFile.type.startsWith('image/')) {
         const reader = new FileReader();
+        setPdfUrl(null)
+        setPngUrl(null)
+        setCrop(null)
+        setPreviewUrl(null)
         reader.onload = () => {
           setImagePreview(reader.result);
           setIsLoading(false);
           setInput(false)
+          setPdfUrl(null)
+          setPngUrl(null)
+          setCrop(null)
+          setPreviewUrl(null)
         };
         reader.readAsDataURL(selectedFile);
       } else if (selectedFile.type === 'application/pdf') {
         try {
           const pdfImage = await convertPdfToImage(selectedFile);
           setImagePreview(pdfImage);
+          setPdfUrl(null)
+          setPngUrl(null)
+          setCrop(null)
+          setPreviewUrl(null)
         } catch (error) {
           console.error('Error converting PDF:', error);
         } finally {
           setIsLoading(false);
-          // setPdfUrl(null);
-          // setPngUrl(null);
         }
       }
     }
@@ -140,7 +141,8 @@ const FileUploadCrop = () => {
       fetch(previewUrl)
         .then(res => res.blob())
         .then((blob) => {
-          formData.append('file', blob, 'cropped_image.png');  // Make sure 'file' matches the backend field name
+          const finalFilename = `${filename}` || 'cropped_image.png';  // Use filename from input or default
+          formData.append('file', blob, finalFilename);  // Make sure 'file' matches the backend field name
   
           axios.post('http://localhost:8000/api/v1/process-music-ocr/', formData, {
             headers: token ? { 'Authorization': `Bearer ${token}` } : {},
@@ -183,6 +185,14 @@ const FileUploadCrop = () => {
       <h2>Convert Thai to Nation</h2>
       <div style={{display: "center",}}> 
       {(<input type="file" accept="image/*,application/pdf" onChange={onFileChange} disabled={isLoading} />)}
+      <input
+        type="text"
+        placeholder="Enter Music Name"
+        value={filename}
+        onChange={(e) => setFilename(e.target.value)}
+        required
+        style={{ marginTop: '10px', width: '100%' }}
+      />
 
       {isLoading && (
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
@@ -226,7 +236,7 @@ const FileUploadCrop = () => {
       </button>
 
       {/* Display the generated PDF and PNG */}
-      {pdfUrl && (
+      {pdfUrl && pngUrl && (
   <div style={{ marginTop: '20px',justifyContent:'space-evenly',gap:'10px'}}>
     <h3>Generated Music Score PDF:</h3>
     <button onClick={() => handleDownload(pdfUrl, 'music_score.pdf')} style={{ padding: '10px 20px',marginRight:'10px' }} >
@@ -236,7 +246,6 @@ const FileUploadCrop = () => {
       Download PNG
     </button>
   </div>
-  
 )}</div>
 
 {pngUrl && (
@@ -248,7 +257,6 @@ const FileUploadCrop = () => {
       style={{ maxWidth: '100%',overflowY:'auto' }} 
     />
     <br />
-    
   </div>
 )}
 

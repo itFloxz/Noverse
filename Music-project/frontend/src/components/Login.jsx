@@ -19,6 +19,7 @@ const Login = () => {
     const token = localStorage.getItem('access');
     if (token) {
       navigate('/dashboard'); // เปลี่ยนไปหน้า dashboard ถ้ามี token
+      toast.success("You already Login")
     }
   }, [navigate]); // เพิ่ม dependency เพื่อให้ navigate ทำงานอย่างถูกต้อง
 
