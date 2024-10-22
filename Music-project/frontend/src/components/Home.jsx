@@ -11,13 +11,13 @@ const Home = () => {
         <p style={styles.description}>A platform where you can convert Thai musical notes to international notation and vice versa!</p>
         
         <div style={styles.buttonContainer}>
-          <Link to="/file-upload" style={styles.link}>
+          <Link to="/FileUploadCrop" style={styles.link}>
             <button style={styles.button}>Convert Thai to International</button>
           </Link>
           <Link to="/international-to-thai" style={styles.link}>
             <button style={styles.button}>Convert International to Thai</button>
           </Link>
-          <Link to="/profile" style={styles.link}>
+          <Link to="/dashboard" style={styles.link}>
             <button style={styles.button}>Go to Profile</button>
           </Link>
         </div>
@@ -30,6 +30,7 @@ const styles = {
   container: {
     textAlign: 'center',
     padding: '50px',
+    margin:'12%'
   },
   description: {
     fontSize: '18px',

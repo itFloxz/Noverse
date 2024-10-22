@@ -58,8 +58,8 @@ const HeaderStyled = () => {
             )}
           </div>
         ) : (
-          <Link to="/signup" style={styles.link}>
-            Sign Up
+          <Link to="/login" style={styles.link}>
+            Login
           </Link>
         )}
       </div>
