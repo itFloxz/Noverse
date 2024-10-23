@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utlils/axiosInstance";
 import { toast } from "react-toastify";
 import Header from "./Header";
+import Stars from "./star";
+
 
 const Profile = () => {
   const navigate = useNavigate();

@@ -182,7 +182,7 @@ const FileUploadCrop = () => {
   return (
     <div style={{display:""}}> 
    <Header ></Header>
-      <h2>Convert Thai to Nation</h2>
+      <h2>Convert Thai to National</h2>
       <div style={{display: "center",}}> 
       {(<input type="file" accept="image/*,application/pdf" onChange={onFileChange} disabled={isLoading} />)}
       <div>
@@ -192,7 +192,7 @@ const FileUploadCrop = () => {
         value={filename}
         onChange={(e) => setFilename(e.target.value)}
         required
-        style={{ marginTop: '10px', width: '95%', }}
+        style={{ marginTop: '10px', width: '94%', }}
       />
 <button onClick={handleSubmit} style={{ marginTop: '20px',height:'40px' }} disabled={isLoading || !previewUrl}>
         {isLoading ? 'Downloading...' : 'Upload'}
@@ -285,3 +285,4 @@ const FileUploadCrop = () => {
 };
 
 export default FileUploadCrop;
+
