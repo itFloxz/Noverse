@@ -38,3 +38,5 @@ dist-ssr
 /Music-project/django_rest_auth/accounts/__pycache__
 *.pyc
 /Music-project/django_rest_auth/media
+*.pyc
+__pycache__
