@@ -40,3 +40,4 @@ dist-ssr
 /Music-project/django_rest_auth/media
 *.pyc
 __pycache__
+*.pyc

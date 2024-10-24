@@ -43,10 +43,11 @@ const Profile = () => {
 
   const handleUpdateName = async () => {
     try {
-      const response = await axiosInstance.post("/auth/profile/", {
+      const response = await axiosInstance.post("/auth/change-name/", {
         first_name: firstName,
         last_name: lastName,
       });
+  
       if (response.status === 200) {
         toast.success("Name updated successfully!");
         localStorage.setItem("user", JSON.stringify({ 
@@ -54,12 +55,14 @@ const Profile = () => {
           first_name: firstName, 
           last_name: lastName 
         }));
+        window.location.reload();
       }
     } catch (error) {
       toast.error("Failed to update name!");
       console.error(error);
     }
   };
+  
 
   const handleChangePassword = async () => {
     try {

@@ -128,4 +128,20 @@ class ChangePasswordView(GenericAPIView):
         user.save()
         return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
     
-    
+
+class ChangeName(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+
+        if not first_name or not last_name:
+            return Response({'message': 'Both first name and last name are required.'}, status=400)
+
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+
+        return Response({'message': 'Name updated successfully.'}, status=200)

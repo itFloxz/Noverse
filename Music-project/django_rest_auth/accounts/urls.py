@@ -1,12 +1,12 @@
 from django.urls import path
-from .views import RegisterUserView, TestAuthenticationView, VerifyUserEmail, LoginUserView, PasswordResetConfirm, PasswordResetRequestView, SetNewPassword, LogoutUserView, ChangePasswordView
+from .views import ChangeName,RegisterUserView, TestAuthenticationView, VerifyUserEmail, LoginUserView, PasswordResetConfirm, PasswordResetRequestView, SetNewPassword, LogoutUserView, ChangePasswordView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
+# from drf_yasg.views import get_schema_view
+# from drf_yasg import openapi
 
 urlpatterns = [
     path('register/', RegisterUserView.as_view(), name='register'),
@@ -19,4 +19,5 @@ urlpatterns = [
     path('set-new-password/', SetNewPassword.as_view(), name='set-new-password'),
     path('logout/', LogoutUserView.as_view(), name='logout'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('change-name/', ChangeName.as_view(), name='change-name'),
 ]
