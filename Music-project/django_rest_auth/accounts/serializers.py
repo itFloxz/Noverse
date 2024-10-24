@@ -217,3 +217,25 @@ class LogoutUserSerializer(serializers.Serializer):
         except TokenError:
             self.fail('bad_token')
             
+from rest_framework import serializers
+from django.contrib.auth.hashers import check_password
+from .models import User
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not check_password(value, user.password):
+            raise serializers.ValidationError("Old password is incorrect.")
+        return value
+
+    def validate_new_password(self, value):
+        # คุณสามารถเพิ่มเงื่อนไขความปลอดภัยของรหัสผ่านใหม่ที่ต้องการที่นี่
+        return value
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()

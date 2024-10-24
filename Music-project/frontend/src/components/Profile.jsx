@@ -9,8 +9,18 @@ const Profile = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const jwt_access = localStorage.getItem("access");
 
-  const [name, setName] = useState(user?.names || ""); // State สำหรับชื่อ
-  const [password, setPassword] = useState(""); // State สำหรับรหัสผ่านใหม่
+  const [firstName, setFirstName] = useState(user?.first_name || "");
+  const [lastName, setLastName] = useState(user?.last_name || "");
+  const [password, setPassword] = useState("");
+  const [oldPassword, setOldPassword] = useState("");
+
+  // Refresh page only once after login
+  useEffect(() => {
+    if (!sessionStorage.getItem("profile_refreshed")) {
+      sessionStorage.setItem("profile_refreshed", "true");
+      window.location.reload(); // Reload the page only once
+    }
+  }, []);
 
   useEffect(() => {
     if (!jwt_access || !user) {
@@ -33,10 +43,17 @@ const Profile = () => {
 
   const handleUpdateName = async () => {
     try {
-      const response = await axiosInstance.put("/auth/profile/", { names: name });
+      const response = await axiosInstance.post("/auth/profile/", {
+        first_name: firstName,
+        last_name: lastName,
+      });
       if (response.status === 200) {
         toast.success("Name updated successfully!");
-        localStorage.setItem("user", JSON.stringify({ ...user, names: name }));
+        localStorage.setItem("user", JSON.stringify({ 
+          ...user, 
+          first_name: firstName, 
+          last_name: lastName 
+        }));
       }
     } catch (error) {
       toast.error("Failed to update name!");
@@ -47,11 +64,13 @@ const Profile = () => {
   const handleChangePassword = async () => {
     try {
       const response = await axiosInstance.post("/auth/change-password/", {
-        password,
+        old_password: oldPassword,
+        new_password: password,
       });
       if (response.status === 200) {
         toast.success("Password changed successfully!");
-        setPassword(""); // ล้างฟิลด์รหัสผ่านหลังจากเปลี่ยนเสร็จ
+        setPassword("");
+        setOldPassword("");
       }
     } catch (error) {
       toast.error("Failed to change password!");
@@ -83,17 +102,25 @@ const Profile = () => {
     <div>
       <Header />
       <div style={styles.container}>
-        <h2>Hi, {user?.names}</h2>
+        <h2>Hi, {user?.first_name} {user?.last_name}</h2>
         <p style={{ textAlign: "center" }}>Welcome to your profile</p>
 
         {/* Form for updating name */}
         <div style={styles.formGroup}>
-          <label htmlFor="name">Change Name:</label>
+          <label htmlFor="first_name">Change First Name:</label>
           <input
             type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            id="first_name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            style={styles.input}
+          />
+          <label htmlFor="last_name">Change Last Name:</label>
+          <input
+            type="text"
+            id="last_name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
             style={styles.input}
           />
           <button onClick={handleUpdateName} style={styles.button}>
@@ -103,7 +130,15 @@ const Profile = () => {
 
         {/* Form for changing password */}
         <div style={styles.formGroup}>
-          <label htmlFor="password">Change Password:</label>
+          <label htmlFor="old_password">Current Password:</label>
+          <input
+            type="password"
+            id="old_password"
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            style={styles.input}
+          />
+          <label htmlFor="password">New Password:</label>
           <input
             type="password"
             id="password"
