@@ -14,11 +14,12 @@ import fitz
 from .models import MusicFile
 from .serializers import MusicFileSerializer
 from rest_framework.response import Response
+import zipfile
 
 # Set MuseScore path globally
 environment.set('musescoreDirectPNGPath', r'C:\Program Files\MuseScore 4\bin\MuseScore4.exe')
 
-def enhance_image_advanced(image_path, sharpness_factor=2.0, contrast_factor=1.5):
+def enhance_image_advanced(image_path, sharpness_factor=1.5, contrast_factor=1.5):
     """Enhances the image by adjusting sharpness, converting to grayscale, and increasing contrast."""
     try:
         if not os.path.isfile(image_path):
@@ -97,52 +98,98 @@ def create_music_score(elements, mapping, time_signature='2/4', duration=0.5):
         score.append(n)
     return score
 
-def pdf_to_png(pdf_path, output_path):
-    """Converts a PDF file to PNG images."""
-    pdf = fitz.open(pdf_path)
-    for page_num in range(len(pdf)):
-        page = pdf.load_page(page_num)
-        pix = page.get_pixmap(dpi=600)
-        pix.save(f"{output_path}_{page_num}.png")
-    pdf.close()
+# def pdf_to_png(pdf_path, output_path):
+#     """Converts a PDF file to PNG images."""
+#     pdf = fitz.open(pdf_path)
+#     for page_num in range(len(pdf)):
+#         page = pdf.load_page(page_num)
+#         pix = page.get_pixmap(dpi=600)
+#         pix.save(f"{output_path}_{page_num}.png")
+#     pdf.close()
+
+
+def pdf_to_images(pdf_path, output_folder):
+    """Convert each PDF page to PNG and return a list of image paths."""
+    pdf = fitz.open(pdf_path)  # เปิด PDF
+    image_files = []
+    os.makedirs(output_folder, exist_ok=True)  # สร้างโฟลเดอร์สำหรับเก็บภาพ
+
+    # แปลงหน้าแรกแยกต่างหาก
+    first_page = pdf.load_page(0)  # โหลดหน้าแรก
+    first_pix = first_page.get_pixmap(dpi=600)  # แปลงเป็นภาพด้วย DPI 600
+    first_page_path = os.path.join(output_folder, "first_page.png")
+    first_pix.save(first_page_path)  # บันทึกหน้าแรกเป็น PNG
+    image_files.append(first_page_path)  # เพิ่มลงในลิสต์ไฟล์ภาพ
+
+    # แปลงหน้าที่เหลือ (ถ้ามี) เป็น PNG
+    for page_num in range(0, len(pdf)):
+        page = pdf.load_page(page_num)  # โหลดหน้าถัดไป
+        pix = page.get_pixmap(dpi=600)  # แปลงเป็นภาพ
+        image_file = os.path.join(output_folder, f"page_{page_num}.png")
+        pix.save(image_file)  # บันทึกภาพ
+        image_files.append(image_file)  # เพิ่มไฟล์ลงลิสต์
+
+    pdf.close()  # ปิด PDF
+    return image_files  # คืนค่ารายการไฟล์ PNG
+
+def create_zip_from_images(image_files, zip_filename):
+    """Create a zip file from a list of images."""
+    with zipfile.ZipFile(zip_filename, 'w') as zipf:
+        for image_file in image_files:
+            zipf.write(image_file, os.path.basename(image_file))  # เขียนไฟล์ลงใน ZIP
+    return zip_filename  # คืนชื่อไฟล์ ZIP
+
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def process_music_ocr(request):
-    """Processes uploaded music files through OCR and generates outputs."""
+    """Processes uploaded music files through OCR, generates PNGs, and creates a zip."""
     if 'file' not in request.FILES:
         return JsonResponse({"error": "No file provided"}, status=400)
 
+    # รับไฟล์ที่อัปโหลดและตั้งชื่อไฟล์พื้นฐาน
     file = request.FILES['file']
     original_name = get_valid_filename(file.name)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     username = request.user.email if request.user.is_authenticated else 'guest'
 
+    # กำหนดเส้นทางไฟล์ต่าง ๆ
     base_name = f"{username}_{timestamp}"
     media_root = settings.MEDIA_ROOT
-    file_path = os.path.join(media_root, f"{base_name}_original_{original_name}")
-    pdf_output = os.path.join(media_root, f"{base_name}_output_music_score.pdf")
-    png_output = os.path.join(media_root, f"{base_name}_output_music_score")
+    output_folder = os.path.join(media_root, base_name)
 
+    # สร้างโฟลเดอร์หลักสำหรับเก็บผลลัพธ์
+    os.makedirs(output_folder, exist_ok=True)
+
+    # กำหนดเส้นทางของไฟล์ต่าง ๆ ภายในโฟลเดอร์ที่สร้าง
+    file_path = os.path.join(output_folder, f"original_{original_name}")
+    pdf_output = os.path.join(output_folder, "output_music_score.pdf")
+    png_output = os.path.join(output_folder, "output_music_score")
+    zip_output = os.path.join(output_folder, "images.zip")
+
+    # สร้างโฟลเดอร์ถ้ายังไม่มี
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    
     try:
         with open(file_path, 'wb+') as f:
             for chunk in file.chunks():
-                f.write(chunk)
+                f.write(chunk)  # บันทึกไฟล์ที่อัปโหลด
     except IOError as e:
         return JsonResponse({"error": f"Failed to save file: {e}"}, status=500)
 
-    # ปรับคมชัดและ contrast ของภาพ
+    # Enhance the image for better OCR
     enhanced_image = enhance_image_advanced(file_path, sharpness_factor=3.0, contrast_factor=2.0)
     if not enhanced_image:
         return JsonResponse({"error": "Failed to enhance image"}, status=500)
 
-    # ใช้ easyocr อ่านข้อความในภาพ
+    # OCR processing
     reader = easyocr.Reader(['th'])
     ocr_results = reader.readtext(enhanced_image, detail=0, allowlist="ดรมฟซลท-ฺํุู")
     corrected = [correct_text(line) for line in ocr_results]
     universal_results = {f"box_{i}": transform_to_universal_format(line) for i, line in enumerate(corrected)}
 
+    # สร้างโน้ตดนตรีจากผลลัพธ์ OCR
     pattern = re.compile(r'C#?4|D#?4|E#?4|F#?4|G#?4|A#?4|B#?4|C#?5|D#?5|E#?5|F#?5|G#?5|A#?5|B#?5|-')
     elements = [elem for text in universal_results.values() for elem in extract_music_elements(text, pattern)]
 
@@ -154,24 +201,34 @@ def process_music_ocr(request):
     except Exception as e:
         return JsonResponse({"error": f"Failed to create PDF: {e}"}, status=500)
 
+    # Convert PDF to PNG and create a zip file
     try:
-        pdf_to_png(pdf_output, png_output)
+        image_files = pdf_to_images(pdf_output, png_output)  # แปลง PDF เป็น PNG
+        zip_file = create_zip_from_images(image_files, zip_output)  # สร้าง ZIP จาก PNG
     except Exception as e:
-        return JsonResponse({"error": f"Failed to convert PDF to PNG: {e}"}, status=500)
+        return JsonResponse({"error": f"Failed to generate zip: {e}"}, status=500)
 
-    pdf_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}_output_music_score.pdf")
-    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}_output_music_score_0.png")
+    # สร้าง URL สำหรับดาวน์โหลด PDF และ ZIP
+    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score/first_page.png")
+    pdf_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score.pdf")
+    zip_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/images.zip")
 
+    # บันทึกลงฐานข้อมูลถ้าผู้ใช้ล็อกอิน
     if request.user.is_authenticated:
         MusicFile.objects.create(
             user=request.user,
             original_file_name=original_name,
             pdf_file_path=pdf_url,
-            png_file_path=png_url
+            png_file_path=zip_url
         )
 
-    return JsonResponse({"message": "Processing complete", "pdf_url": pdf_url, "png_url": png_url})
-
+    # ส่ง URL กลับไปยังผู้ใช้
+    return JsonResponse({
+        "message": "Processing complete",
+        "pdf_url": pdf_url,
+        "zip_url": zip_url,
+        "png_url": png_url,
+    })
 
 
 @api_view(['GET'])

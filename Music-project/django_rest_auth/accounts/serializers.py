@@ -10,6 +10,7 @@ from django.urls import reverse
 from .utils import send_normal_email
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.utils.html import format_html
+import re
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -23,8 +24,23 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         password = attrs.get('password', '')
         password2 = attrs.get('password2', '')
+
+        # ตรวจสอบว่ารหัสผ่านตรงกันหรือไม่
         if password != password2:
             raise serializers.ValidationError('Passwords do not match.')
+
+        # ตรวจสอบความปลอดภัยของรหัสผ่าน
+        if len(password) < 8:
+            raise serializers.ValidationError('Password must be at least 8 characters long.')
+        if not re.search(r'[A-Z]', password):
+            raise serializers.ValidationError('Password must contain at least one uppercase letter.')
+        if not re.search(r'[a-z]', password):
+            raise serializers.ValidationError('Password must contain at least one lowercase letter.')
+        if not re.search(r'[0-9]', password):
+            raise serializers.ValidationError('Password must contain at least one digit.')
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            raise serializers.ValidationError('Password must contain at least one special character.')
+
         return attrs
 
     def create(self, validated_data):
@@ -43,10 +59,11 @@ class LoginSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(max_length=255, read_only=True)
     access_token = serializers.CharField(max_length=255, read_only=True)
     refresh_token = serializers.CharField(max_length=255, read_only=True)
-
+    first_name = serializers.CharField(max_length=255, read_only=True)
+    last_name = serializers.CharField(max_length=255, read_only=True)
     class Meta:
         model = User
-        fields = ['email', 'password', 'full_name', 'access_token', 'refresh_token']
+        fields = ['email', 'password', 'full_name', 'access_token', 'refresh_token','first_name','last_name']
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -62,6 +79,8 @@ class LoginSerializer(serializers.ModelSerializer):
         return {
             'email': user.email,
             'full_name': user.get_full_name,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
             'access_token': str(user_tokens.get('access')),
             'refresh_token': str(user_tokens.get('refresh')),
         }
@@ -140,8 +159,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 
 class SetNewPasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(max_length=100, min_length=6, write_only=True)
-    confirm_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
+    password = serializers.CharField(max_length=100, min_length=8, write_only=True)
+    confirm_password = serializers.CharField(max_length=100, min_length=8, write_only=True)
     uidb64 = serializers.CharField(write_only=True)
     token = serializers.CharField(write_only=True)
 
@@ -149,23 +168,38 @@ class SetNewPasswordSerializer(serializers.Serializer):
         fields = ["password", "confirm_password", "uidb64", "token"]
 
     def validate(self, attrs):
-        try:
-            token = attrs.get('token')
-            uidb64 = attrs.get('uidb64')
-            password = attrs.get('password')
-            confirm_password = attrs.get('confirm_password')
+        password = attrs.get('password')
+        confirm_password = attrs.get('confirm_password')
 
-            user_id = force_str(urlsafe_base64_decode(uidb64))
+        # ตรวจสอบว่ารหัสผ่านตรงกันหรือไม่
+        if password != confirm_password:
+            raise AuthenticationFailed("Passwords do not match.")
+
+        # ตรวจสอบความปลอดภัยของรหัสผ่าน
+        if len(password) < 8:
+            raise serializers.ValidationError('Password must be at least 8 characters long.')
+        if not re.search(r'[A-Z]', password):
+            raise serializers.ValidationError('Password must contain at least one uppercase letter.')
+        if not re.search(r'[a-z]', password):
+            raise serializers.ValidationError('Password must contain at least one lowercase letter.')
+        if not re.search(r'[0-9]', password):
+            raise serializers.ValidationError('Password must contain at least one digit.')
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            raise serializers.ValidationError('Password must contain at least one special character.')
+
+        # ตรวจสอบความถูกต้องของ token และ uid
+        try:
+            user_id = force_str(urlsafe_base64_decode(attrs.get('uidb64')))
             user = User.objects.get(id=user_id)
-            if not PasswordResetTokenGenerator().check_token(user, token):
-                raise serializers.ValidationError("The reset link is invalid or has expired.", 401)
-            if password != confirm_password:
-                raise AuthenticationFailed("Passwords do not match.")
-            user.set_password(password)
-            user.save()
-            return user
-        except Exception as e:
-            raise AuthenticationFailed("Link is invalid or has expired.")
+            if not PasswordResetTokenGenerator().check_token(user, attrs.get('token')):
+                raise AuthenticationFailed("The reset link is invalid or has expired.")
+        except Exception:
+            raise AuthenticationFailed("The reset link is invalid or has expired.")
+
+        user.set_password(password)
+        user.save()
+
+        return user
 
 
 class LogoutUserSerializer(serializers.Serializer):
@@ -185,3 +219,26 @@ class LogoutUserSerializer(serializers.Serializer):
             token.blacklist()
         except TokenError:
             self.fail('bad_token')
+            
+from rest_framework import serializers
+from django.contrib.auth.hashers import check_password
+from .models import User
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not check_password(value, user.password):
+            raise serializers.ValidationError("Old password is incorrect.")
+        return value
+
+    def validate_new_password(self, value):
+        # คุณสามารถเพิ่มเงื่อนไขความปลอดภัยของรหัสผ่านใหม่ที่ต้องการที่นี่
+        return value
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()

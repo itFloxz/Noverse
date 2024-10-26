@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import axiosInstance from "../utlils/axiosInstance"; // Adjust the path if necessary
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import axiosInstance from "../utlils/axiosInstance"; // Adjust path if necessary
+import HeaderStyled from './Header'; // Import Header component
+
 const MusicHistory = () => {
   const [musicHistory, setMusicHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
   useEffect(() => {
     const fetchMusicHistory = async () => {
       try {
@@ -13,12 +16,10 @@ const MusicHistory = () => {
         setMusicHistory(response.data);
       } catch (error) {
         console.error('Error fetching music history:', error);
-        toast.error("Please login again!?")
-        navigate("/login")
-
+        toast.error("Please login again!");
+        navigate("/login"); // Redirect to login if there's an error
       } finally {
         setLoading(false);
-        
       }
     };
 
@@ -28,7 +29,7 @@ const MusicHistory = () => {
   const downloadFile = async (filePath, fileName) => {
     try {
       const response = await axiosInstance.get(filePath, {
-        responseType: 'blob', // Important: to get the file as binary data (Blob)
+        responseType: 'blob', // Important to get the file as binary data (Blob)
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -48,8 +49,14 @@ const MusicHistory = () => {
 
   return (
     <div>
-      <h1>Your Music History</h1>
-      <table border="1" cellPadding="10" cellSpacing="0" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <HeaderStyled /> {/* Display Header component */}
+      <h1 style={{ textAlign: 'center', marginTop: '20px' }}>Your Music History</h1>
+      <table
+        border="1"
+        cellPadding="10"
+        cellSpacing="0"
+        style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}
+      >
         <thead>
           <tr>
             <th>File Name</th>
@@ -64,14 +71,14 @@ const MusicHistory = () => {
               <td>{file.original_file_name}</td>
               <td>
                 <button
-                  onClick={() => downloadFile(file.pdf_file_path, `MusicScore.pdf`)}
+                  onClick={() => downloadFile(file.pdf_file_path, `${file.original_file_name}.pdf`)}
                 >
                   Download PDF
                 </button>
               </td>
               <td>
                 <button
-                  onClick={() => downloadFile(file.png_file_path, `MusicScore.png`)}
+                  onClick={() => downloadFile(file.png_file_path, `${file.original_file_name}.png`)}
                 >
                   Download PNG
                 </button>
