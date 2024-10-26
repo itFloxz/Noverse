@@ -42,7 +42,7 @@ const HeaderStyled = () => {
         {user ? (
           <div style={styles.profileMenu} onClick={toggleDropdown}>
             <VscAccount size={24} style={{ marginRight: '8px' }} />
-            <span>{user.names}</span>
+            <span>{user.first_name} {user.last_name}</span>
             {dropdownOpen && (
               <div style={styles.dropdown}>
                 <Link to="/dashboard" style={styles.dropdownItem}>

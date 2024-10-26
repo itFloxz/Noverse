@@ -45,6 +45,8 @@ const Login = () => {
         const user = {
           email: response.email,
           names: response.full_name,
+          first_name: response.first_name,
+          last_name:response.last_name
         };
 
         localStorage.setItem("user", JSON.stringify(user));
