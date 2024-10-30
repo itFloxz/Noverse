@@ -46,7 +46,7 @@ class VerifyUserEmail(GenericAPIView):
                 user.is_verified = True
                 user.save()
                 return Response({
-                    'message' : 'account email verified successfully'
+                'message' : 'account email verified successfully'
                 },status=status.HTTP_200_OK)
             return Response({
                 'message':'code is invalid user already verified'

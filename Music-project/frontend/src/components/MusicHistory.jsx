@@ -4,7 +4,9 @@ import { toast } from "react-toastify";
 import axiosInstance from "../utlils/axiosInstance"; // Adjust path if necessary
 import HeaderStyled from './Header'; // Import Header component
 
+
 const MusicHistory = () => {
+  const [hoveredRow, setHoveredRow] = React.useState(null);
   const [musicHistory, setMusicHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -49,47 +51,126 @@ const MusicHistory = () => {
 
   return (
     <div>
-      <HeaderStyled /> {/* Display Header component */}
-      <h1 style={{ textAlign: 'center', marginTop: '20px' }}>Your Music History</h1>
-      <table
-        border="1"
-        cellPadding="10"
-        cellSpacing="0"
-        style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}
-      >
+    <HeaderStyled/>
+    <div style={styles.container}>
+      <h1 style={styles.title}>Your Music History</h1>
+      <table style={styles.table}>
         <thead>
           <tr>
-            <th>File Name</th>
-            <th>PDF</th>
-            <th>PNG</th>
-            <th>Uploaded At</th>
+            <th style={styles.th}>File Name</th>
+            <th style={styles.th}>PDF</th>
+            <th style={styles.th}>PNG</th>
+            <th style={styles.th}>Uploaded At</th>
           </tr>
         </thead>
         <tbody>
-          {musicHistory.map((file) => (
-            <tr key={file.id}>
-              <td>{file.original_file_name}</td>
-              <td>
+          {musicHistory.map((file, index) => (
+            <tr
+              key={file.id}
+              style={
+                hoveredRow === index
+                  ? { ...styles.tr, ...styles.trHover }
+                  : styles.tr
+              }
+              onMouseEnter={() => setHoveredRow(index)}
+              onMouseLeave={() => setHoveredRow(null)}
+            >
+              <td style={styles.td}>{file.original_file_name}</td>
+              <td style={styles.td}>
                 <button
-                  onClick={() => downloadFile(file.pdf_file_path, `${file.original_file_name}.pdf`)}
+                  style={styles.button}
+                  onMouseOver={(e) =>
+                    (e.target.style.backgroundColor = styles.buttonHover.backgroundColor)
+                  }
+                  onMouseOut={(e) =>
+                    (e.target.style.backgroundColor = styles.button.backgroundColor)
+                  }
+                  onClick={() =>
+                    downloadFile(file.pdf_file_path, `${file.original_file_name}_score.pdf`)
+                  }
                 >
                   Download PDF
                 </button>
               </td>
-              <td>
+              <td style={styles.td}>
                 <button
-                  onClick={() => downloadFile(file.png_file_path, `${file.original_file_name}.png`)}
+                  style={styles.button}
+                  onMouseOver={(e) =>
+                    (e.target.style.backgroundColor = styles.buttonHover.backgroundColor)
+                  }
+                  onMouseOut={(e) =>
+                    (e.target.style.backgroundColor = styles.button.backgroundColor)
+                  }
+                  onClick={() =>
+                    downloadFile(file.png_file_path, `${file.original_file_name}_score.zip`)
+                  }
                 >
                   Download PNG
                 </button>
               </td>
-              <td>{new Date(file.created_at).toLocaleString()}</td>
+              <td style={styles.td}>
+                {new Date(file.created_at).toLocaleString()}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+    </div>
   );
 };
 
 export default MusicHistory;
+
+
+
+const styles = {
+  container: {
+    padding: '20px',
+    backgroundColor: '#f4f6f8',
+    minHeight: '100vh',
+    fontFamily: 'Arial, sans-serif',
+  },
+  title: {
+    textAlign: 'center',
+    marginTop: '20px',
+    fontSize: '32px',
+    color: '#333',
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    marginTop: '20px',
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+  },
+  th: {
+    backgroundColor: '#1E2A47',
+    color: '#fff',
+    padding: '15px',
+    textAlign: 'center',
+  },
+  tr: {
+    backgroundColor: '#fff',
+    transition: 'background-color 0.3s',
+  },
+  trHover: {
+    backgroundColor: '#f1f1f1',
+  },
+  td: {
+    padding: '15px',
+    borderBottom: '1px solid #ddd',
+    textAlign: 'center'
+  },
+  button: {
+    padding: '10px 15px',
+    backgroundColor: '#4caf50',
+    border: 'none',
+    borderRadius: '5px',
+    color: '#fff',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s',
+  },
+  buttonHover: {
+    backgroundColor: '#45a049',
+  },
+};

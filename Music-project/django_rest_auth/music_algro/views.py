@@ -54,7 +54,7 @@ def enhance_image_advanced(image_path, sharpness_factor=1.5, contrast_factor=1.5
 def correct_text(detected_text):
     """Applies specific corrections to the OCR output."""
     correction_map = {
-        "ุู": "ฺ", "ช": "ซ", "พ": "ฟ", "": "-"
+        "ุ": "ฺ", "ช": "ซ", "พ": "ฟ", "": "-"
     }
     return ''.join(correction_map.get(char, char) for char in detected_text)
 
@@ -98,14 +98,6 @@ def create_music_score(elements, mapping, time_signature='2/4', duration=0.5):
         score.append(n)
     return score
 
-# def pdf_to_png(pdf_path, output_path):
-#     """Converts a PDF file to PNG images."""
-#     pdf = fitz.open(pdf_path)
-#     for page_num in range(len(pdf)):
-#         page = pdf.load_page(page_num)
-#         pix = page.get_pixmap(dpi=600)
-#         pix.save(f"{output_path}_{page_num}.png")
-#     pdf.close()
 
 
 def pdf_to_images(pdf_path, output_folder):
@@ -117,12 +109,12 @@ def pdf_to_images(pdf_path, output_folder):
     # แปลงหน้าแรกแยกต่างหาก
     first_page = pdf.load_page(0)  # โหลดหน้าแรก
     first_pix = first_page.get_pixmap(dpi=600)  # แปลงเป็นภาพด้วย DPI 600
-    first_page_path = os.path.join(output_folder, "first_page.png")
+    first_page_path = os.path.join(output_folder, "preview_page_1.png")
     first_pix.save(first_page_path)  # บันทึกหน้าแรกเป็น PNG
     image_files.append(first_page_path)  # เพิ่มลงในลิสต์ไฟล์ภาพ
 
     # แปลงหน้าที่เหลือ (ถ้ามี) เป็น PNG
-    for page_num in range(0, len(pdf)):
+    for page_num in range(1, len(pdf)):
         page = pdf.load_page(page_num)  # โหลดหน้าถัดไป
         pix = page.get_pixmap(dpi=600)  # แปลงเป็นภาพ
         image_file = os.path.join(output_folder, f"page_{page_num}.png")
@@ -188,7 +180,8 @@ def process_music_ocr(request):
     ocr_results = reader.readtext(enhanced_image, detail=0, allowlist="ดรมฟซลท-ฺํุู")
     corrected = [correct_text(line) for line in ocr_results]
     universal_results = {f"box_{i}": transform_to_universal_format(line) for i, line in enumerate(corrected)}
-
+    print(ocr_results)
+    print(universal_results)
     # สร้างโน้ตดนตรีจากผลลัพธ์ OCR
     pattern = re.compile(r'C#?4|D#?4|E#?4|F#?4|G#?4|A#?4|B#?4|C#?5|D#?5|E#?5|F#?5|G#?5|A#?5|B#?5|-')
     elements = [elem for text in universal_results.values() for elem in extract_music_elements(text, pattern)]
@@ -209,7 +202,7 @@ def process_music_ocr(request):
         return JsonResponse({"error": f"Failed to generate zip: {e}"}, status=500)
 
     # สร้าง URL สำหรับดาวน์โหลด PDF และ ZIP
-    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score/first_page.png")
+    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score/preview_page_1.png")
     pdf_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score.pdf")
     zip_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/images.zip")
 

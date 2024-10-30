@@ -13,6 +13,7 @@ const FileUploadCrop = () => {
   const [completedCrop, setCompletedCrop] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmit,setIsSubmit] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);  // To store PDF URL from backend
   const [pngUrl, setPngUrl] = useState(null);  // To store PNG URL from backend
   const [zipUrl,setZipUrl] = useState(null);
@@ -43,7 +44,8 @@ const FileUploadCrop = () => {
         setPreviewUrl(null)
         reader.onload = () => {
           setImagePreview(reader.result);
-          setIsLoading(false);
+          setIsLoading(false)
+          setIsSubmit(false)
           setInput(false)
           setPdfUrl(null)
           setPngUrl(null)
@@ -55,7 +57,8 @@ const FileUploadCrop = () => {
       } else if (selectedFile.type === 'application/pdf') {
         try {
           const pdfImage = await convertPdfToImage(selectedFile);
-          setImagePreview(pdfImage);
+          setImagePreview(pdfImage)
+          setIsSubmit(false)
           setPdfUrl(null)
           setPngUrl(null)
           setZipUrl(null)
@@ -139,7 +142,7 @@ const FileUploadCrop = () => {
       
       const token = localStorage.getItem('access') ? JSON.parse(localStorage.getItem('access')) : null;
       const formData = new FormData();
-  
+      
       // Append the cropped image blob
       fetch(previewUrl)
         .then(res => res.blob())
@@ -162,6 +165,7 @@ const FileUploadCrop = () => {
           })
           .finally(() => {
             setIsLoading(false);
+            setIsSubmit(true);
           });
         });
     }
@@ -184,7 +188,7 @@ const FileUploadCrop = () => {
   
 
   return (
-    <div style={{display:""}}> 
+    <div > 
    <Header ></Header>
       <h2>Convert Thai to National</h2>
       <div style={{display: "center",}}> 
@@ -210,7 +214,7 @@ const FileUploadCrop = () => {
         </div>
       )}
 
-      {!isLoading && (
+      {!isLoading && !isSubmit && (
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
           {imagePreview && (
             <div style={{ width: '45%' }}>
@@ -257,11 +261,13 @@ const FileUploadCrop = () => {
 {pngUrl && (
   <div style={{ marginTop: '20px' }}>
     <h3>Generated Music Score PNG:</h3>
-    <img 
-      src={`${pngUrl}?t=${new Date().getTime()}`}  // Add a cache-busting query parameter
-      alt="Generated Music Score" 
-      style={{ maxWidth: '100%',overflowY:'auto' }} 
-    />
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+  <img 
+    src={`${pngUrl}?t=${new Date().getTime()}`}  // Add a cache-busting query parameter
+    alt="Generated Music Score" 
+    style={{ maxWidth: '50%', overflowY: 'auto' }} 
+  />
+</div>
     <br />
   </div>
 )}
