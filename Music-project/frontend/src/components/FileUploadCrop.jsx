@@ -202,7 +202,7 @@ const FileUploadCrop = () => {
         required
         style={{ marginTop: '10px', width: '94%', }}
       />
-<button onClick={handleSubmit} style={{ marginTop: '20px',height:'40px' }} disabled={isLoading || !previewUrl}>
+<button onClick={handleSubmit} style={{ marginTop: '20px',height:'40px',backgroundColor:'#1E2A47',color:'#fff'  }} disabled={isLoading || !previewUrl}>
         {isLoading ? 'Downloading...' : 'Upload'}
       </button>
       </div>
@@ -249,10 +249,10 @@ const FileUploadCrop = () => {
       {pdfUrl && pngUrl && (
   <div style={{ marginTop: '20px',justifyContent:'space-evenly',gap:'10px'}}>
     <h3>Generated Music Score PDF:</h3>
-    <button onClick={() => handleDownload(pdfUrl, 'music_score.pdf')} style={{ padding: '10px 20px',marginRight:'10px' }} >
+    <button onClick={() => handleDownload(pdfUrl, 'music_score.pdf')} style={{ padding: '10px 20px',marginRight:'10px',backgroundColor:'#1E2A47',color:'#fff' }} >
       Download PDF
     </button>
-    <button onClick={() => handleDownload(zipUrl, 'music_score.zip')} style={{ padding: '10px 20px',marginRight:'10px' ,}} >
+    <button onClick={() => handleDownload(zipUrl, 'music_score.zip')} style={{ padding: '10px 20px',marginRight:'10px' ,backgroundColor:'#1E2A47',color:'#fff' }} >
       Download PNG
     </button>
   </div>
