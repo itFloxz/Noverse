@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import Stars from "./star";
 
 const VerifyEmail = () => {
   const [otp, setOtp]=useState("")
@@ -21,6 +22,7 @@ const VerifyEmail = () => {
   return (
     <div>
       <div className="form-container">
+        <Stars />
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="">Enter your OTP code:</label>
