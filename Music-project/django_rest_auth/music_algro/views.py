@@ -317,3 +317,11 @@ def music_sheet_upload(request):
         "pdf_url": pdf_url,
         "image_url": png_url
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def history_view(request):
+    user = request.user
+    music_sheets = MusicSheet.objects.filter(user=user).order_by('-created_at')
+    serializer = MusicSheetSerializer(music_sheets, many=True)
+    return Response(serializer.data)

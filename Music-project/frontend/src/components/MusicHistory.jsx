@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axiosInstance from "../utlils/axiosInstance"; // Adjust path if necessary
-import HeaderStyled from './Header'; // Import Header component
+import Header from './Header'; // Import Header component
 
 
 const MusicHistory = () => {
@@ -51,9 +51,9 @@ const MusicHistory = () => {
 
   return (
     <div>
-    <HeaderStyled/>
+    <Header/>
     <div style={styles.container}>
-      <h1 style={styles.title}>Your Music History</h1>
+      <h1 style={styles.title}>Your Music History of Converting National to Thai</h1>
       <table style={styles.table}>
         <thead>
           <tr>
