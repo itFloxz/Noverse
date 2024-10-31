@@ -124,23 +124,42 @@ function NationaltoThai() {
     <button 
       onClick={handleUpload} 
       disabled={loading}
-      style={{ padding: '10px 20px', borderRadius: '5px', backgroundColor: loading ? '#ccc' : '#4CAF50', color: '#fff', fontWeight: 'bold', border: 'none', cursor: loading ? 'default' : 'pointer' }}
+      style={{ padding: '10px 20px', borderRadius: '5px', backgroundColor: loading ? '#ccc' : '#1E2A47', color: '#fff', fontWeight: 'bold', border: 'none', cursor: loading ? 'default' : 'pointer' }}
     >
       {loading ? 'กำลังประมวลผล...' : 'อัปโหลดและสร้าง PDF'}
     </button>
   </div>
 
   {pdfBlob && (
-    <div style={{ marginTop: '30px', textAlign: 'center' }}>
-      <h2 style={{ color: "#4A4A4A" }}>ดาวน์โหลด PDF</h2>
-      <a href={pdfBlob} download="song_structure_custom.pdf" style={{ textDecoration: 'none', color: '#4CAF50', fontWeight: 'bold' }}>ดาวน์โหลด PDF</a>
-      <div style={{ marginTop: '10px' }}>
-        <embed src={pdfBlob} type="application/pdf" width="80%" height="600px" style={{ border: '1px solid #ddd', borderRadius: '5px' }} />
-      </div>
+        <div style={{ marginTop: '30px', textAlign: 'center' }}>
+          <h2 style={{ color: "#4A4A4A" }}>Preview :</h2>
+          <a href={pdfBlob} download="song_structure_custom.pdf" style={{ textDecoration: 'none' }}>
+            <button style={{
+              backgroundColor: '#1E2A47',
+              color: '#FFF',
+              padding: '10px 20px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}>
+              ดาวน์โหลด PDF
+            </button>
+          </a>
+          <div style={{ marginTop: '10px' }}>
+            <embed
+              src={pdfBlob}
+              type="application/pdf"
+              width="80%"
+              height="600px"
+              style={{ border: '1px solid #ddd', borderRadius: '5px' }}
+            />
+          </div>
+        </div>
+      )}
     </div>
-  )}
-</div>
   );
-}
+};
 
 export default NationaltoThai;
