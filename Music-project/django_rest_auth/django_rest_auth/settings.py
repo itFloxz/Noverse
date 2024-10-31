@@ -2,7 +2,7 @@ import environ
 from pathlib import Path
 from datetime import timedelta
 import os
-
+from django.conf import settings
 env = environ.Env(
     DEBUG=(bool,False)
 )

@@ -1,25 +1,30 @@
 import os
 import re
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from datetime import datetime
-from PIL import Image, ImageFilter ,ImageEnhance
+from PIL import Image,ImageEnhance
 import easyocr
 from django.conf import settings
 from django.http import JsonResponse
 from django.utils.text import get_valid_filename
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from music21 import stream, note, environment, meter
+from music21 import stream, note, environment, meter ,metadata
+from django.core.files.storage import default_storage
 import fitz
 from .models import MusicFile
 from .serializers import MusicFileSerializer
 from rest_framework.response import Response
 import zipfile
+from .utils.main import process_music_sheet
+from .serializers import MusicSheetSerializer
+from rest_framework import status
 
 # Set MuseScore path globally
 environment.set('musescoreDirectPNGPath', r'C:\Program Files\MuseScore 4\bin\MuseScore4.exe')
 
-def enhance_image_advanced(image_path, sharpness_factor=1.5, contrast_factor=1.5):
+def enhance_image_advanced(image_path, sharpness_factor=1.5, contrast_factor=1.0):
     """Enhances the image by adjusting sharpness, converting to grayscale, and increasing contrast."""
     try:
         if not os.path.isfile(image_path):
@@ -54,7 +59,7 @@ def enhance_image_advanced(image_path, sharpness_factor=1.5, contrast_factor=1.5
 def correct_text(detected_text):
     """Applies specific corrections to the OCR output."""
     correction_map = {
-        "ุ": "ฺ", "ช": "ซ", "พ": "ฟ", "": "-"
+        "ุ": "ฺ", "ช": "ซ", "พ": "ฟ", "": "-","ู":"ฺ"
     }
     return ''.join(correction_map.get(char, char) for char in detected_text)
 
@@ -87,9 +92,11 @@ def extract_music_elements(text, pattern):
     """Extracts musical elements matching a given pattern."""
     return pattern.findall(text)
 
-def create_music_score(elements, mapping, time_signature='2/4', duration=0.5):
+def create_music_score(elements, mapping,Musicname, time_signature='2/4', duration=0.5):
     """Creates a music score from elements using music21."""
     score = stream.Stream()
+    score.metadata = metadata.Metadata()
+    score.metadata.title = Musicname
     score.append(meter.TimeSignature(time_signature))
     for elem in elements:
         n = note.Rest(quarterLength=duration) if elem == '-' else note.Note(
@@ -97,7 +104,6 @@ def create_music_score(elements, mapping, time_signature='2/4', duration=0.5):
         )
         score.append(n)
     return score
-
 
 
 def pdf_to_images(pdf_path, output_folder):
@@ -155,7 +161,7 @@ def process_music_ocr(request):
     os.makedirs(output_folder, exist_ok=True)
 
     # กำหนดเส้นทางของไฟล์ต่าง ๆ ภายในโฟลเดอร์ที่สร้าง
-    file_path = os.path.join(output_folder, f"original_{original_name}")
+    file_path = os.path.join(output_folder, f"original_{original_name}.png")
     pdf_output = os.path.join(output_folder, "output_music_score.pdf")
     png_output = os.path.join(output_folder, "output_music_score")
     zip_output = os.path.join(output_folder, "images.zip")
@@ -171,23 +177,24 @@ def process_music_ocr(request):
         return JsonResponse({"error": f"Failed to save file: {e}"}, status=500)
 
     # Enhance the image for better OCR
-    enhanced_image = enhance_image_advanced(file_path, sharpness_factor=3.0, contrast_factor=2.0)
+    enhanced_image = enhance_image_advanced(file_path, sharpness_factor=2, contrast_factor=1.0)
     if not enhanced_image:
         return JsonResponse({"error": "Failed to enhance image"}, status=500)
 
     # OCR processing
     reader = easyocr.Reader(['th'])
-    ocr_results = reader.readtext(enhanced_image, detail=0, allowlist="ดรมฟซลท-ฺํุู")
+    ocr_results = reader.readtext(enhanced_image, detail=0, allowlist="ดรมฟซลท-ฺํุูช",min_size=11)
     corrected = [correct_text(line) for line in ocr_results]
     universal_results = {f"box_{i}": transform_to_universal_format(line) for i, line in enumerate(corrected)}
     print(ocr_results)
+    print(corrected)
     print(universal_results)
     # สร้างโน้ตดนตรีจากผลลัพธ์ OCR
     pattern = re.compile(r'C#?4|D#?4|E#?4|F#?4|G#?4|A#?4|B#?4|C#?5|D#?5|E#?5|F#?5|G#?5|A#?5|B#?5|-')
     elements = [elem for text in universal_results.values() for elem in extract_music_elements(text, pattern)]
 
     natural_mapping = {f"{n}#4": f"{n}4" for n in "CDEFGAB"} | {f"{n}#5": f"{n}5" for n in "CDEFGAB"}
-    score = create_music_score(elements, natural_mapping)
+    score = create_music_score(elements, natural_mapping , original_name)
 
     try:
         score.write('musicxml.pdf', pdf_output)
@@ -231,3 +238,42 @@ def user_music_history(request):
     music_files = MusicFile.objects.filter(user=user).order_by('-created_at')  # เรียงตามวันที่ล่าสุด
     serializer = MusicFileSerializer(music_files, many=True)
     return Response(serializer.data)
+
+
+class MusicSheetUploadView(APIView):
+    def post(self, request, format=None):
+        serializer = MusicSheetSerializer(data=request.data)
+        if serializer.is_valid():
+            image = serializer.validated_data['image']
+            title_text = serializer.validated_data.get('title_text', "เพลง บรรเลงใจ")
+            key = serializer.validated_data.get('key', "C Major")
+            tempo = serializer.validated_data.get('tempo', "120 BPM")
+            clef_type = serializer.validated_data.get('clef_type', "classic")
+            clef_music = serializer.validated_data.get('clef_music', "G")
+
+            # บันทึกไฟล์ชั่วคราว
+            file_path = default_storage.save('temp/' + image.name, image)
+            full_path = os.path.join(default_storage.location, file_path)
+
+            # สร้างไฟล์ PDF
+            output_pdf_path = os.path.join(settings.MEDIA_ROOT, 'output', 'preview_page_1.pdf')
+            process_music_sheet(
+                image_path=full_path,
+                output_pdf_path=output_pdf_path,
+                title_text=title_text,
+                key=key,
+                tempo=tempo,
+                clef_type=clef_type,
+                clef_music=clef_music
+            )
+
+            # อ่านไฟล์ PDF
+            with open(output_pdf_path, 'rb') as pdf_file:
+                pdf_data = pdf_file.read()
+
+            # # ลบไฟล์ชั่วคราว
+            # default_storage.delete(file_path)
+            # default_storage.delete(output_pdf_path)
+
+            return Response({'pdf': pdf_data.hex()}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

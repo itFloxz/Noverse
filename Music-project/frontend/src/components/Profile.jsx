@@ -16,6 +16,7 @@ const Profile = () => {
 
   // Refresh page only once after login
   useEffect(() => {
+    
     if (!sessionStorage.getItem("profile_refreshed")) {
       sessionStorage.setItem("profile_refreshed", "true");
       window.location.reload(); // Reload the page only once

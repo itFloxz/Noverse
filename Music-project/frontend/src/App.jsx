@@ -4,11 +4,10 @@ import "react-toastify/dist/ReactToastify.css";
 import reactLogo from "./assets/react.svg";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import viteLogo from "/vite.svg";
-import {Signup, Login, Profile, VerifyEmail, ForgetPassword,FileUploadCrop,MusicHistory} from "./components";
+import {Signup, Login, Profile, VerifyEmail, ForgetPassword,FileUploadCrop,MusicHistory,NationaltoThai} from "./components";
 import "./App.css";
 import { ResetPassword } from "./components/ResetPassword";
 import Home from "./components/Home";
-
 function App() {
 
   return (
@@ -26,6 +25,7 @@ function App() {
           <Route path='/password-reset-confirm/:uid/:token' element={<ResetPassword />}/>
           <Route path='/FileUploadCrop' element={<FileUploadCrop />}/>
           <Route path="/music-history" element={<MusicHistory />} />
+          <Route path='/international-to-thai' element={<NationaltoThai />} />
         </Routes>
       </Router>
     </>

@@ -147,7 +147,7 @@ const FileUploadCrop = () => {
       fetch(previewUrl)
         .then(res => res.blob())
         .then((blob) => {
-          const finalFilename = `${filename}` || 'cropped_image.png';  // Use filename from input or default
+          const finalFilename = `${filename}` || 'cropped_image';  // Use filename from input or default
           formData.append('file', blob, finalFilename);  // Make sure 'file' matches the backend field name
   
           axios.post('http://localhost:8000/api/v1/process-music-ocr/', formData, {
