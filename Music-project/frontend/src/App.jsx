@@ -4,7 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 import reactLogo from "./assets/react.svg";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import viteLogo from "/vite.svg";
-import {Signup, Login, Profile, VerifyEmail, ForgetPassword,FileUploadCrop,MusicHistory,NationaltoThai} from "./components";
+import {Signup, Login, Profile, VerifyEmail, ForgetPassword,FileUploadCrop,MusicHistory,NationaltoThai,MusicHistory2} from "./components";
 import "./App.css";
 import { ResetPassword } from "./components/ResetPassword";
 import Home from "./components/Home";
@@ -26,6 +26,7 @@ function App() {
           <Route path='/FileUploadCrop' element={<FileUploadCrop />}/>
           <Route path="/music-history" element={<MusicHistory />} />
           <Route path='/international-to-thai' element={<NationaltoThai />} />
+          <Route path="/music-history2" element={<MusicHistory2 />} />
         </Routes>
       </Router>
     </>

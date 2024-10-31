@@ -1,5 +1,6 @@
 import os
 import re
+import base64
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from datetime import datetime
@@ -13,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from music21 import stream, note, environment, meter ,metadata
 from django.core.files.storage import default_storage
 import fitz
-from .models import MusicFile
+from .models import MusicFile,MusicSheet
 from .serializers import MusicFileSerializer
 from rest_framework.response import Response
 import zipfile
@@ -240,40 +241,79 @@ def user_music_history(request):
     return Response(serializer.data)
 
 
-class MusicSheetUploadView(APIView):
-    def post(self, request, format=None):
-        serializer = MusicSheetSerializer(data=request.data)
-        if serializer.is_valid():
-            image = serializer.validated_data['image']
-            title_text = serializer.validated_data.get('title_text', "เพลง บรรเลงใจ")
-            key = serializer.validated_data.get('key', "C Major")
-            tempo = serializer.validated_data.get('tempo', "120 BPM")
-            clef_type = serializer.validated_data.get('clef_type', "classic")
-            clef_music = serializer.validated_data.get('clef_music', "G")
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def music_sheet_upload(request):
+    # รับค่าจาก request.data โดยตรง
+    image = request.FILES.get('image')
+    title_text = request.data.get('title_text')
+    key = request.data.get('key',)
+    tempo = request.data.get('tempo')
+    clef_type = request.data.get('clef_type')
+    clef_music = request.data.get('clef_music')
 
-            # บันทึกไฟล์ชั่วคราว
-            file_path = default_storage.save('temp/' + image.name, image)
-            full_path = os.path.join(default_storage.location, file_path)
+    if not image:
+        return JsonResponse({"error": "Image file is required."}, status=400)
 
-            # สร้างไฟล์ PDF
-            output_pdf_path = os.path.join(settings.MEDIA_ROOT, 'output', 'preview_page_1.pdf')
-            process_music_sheet(
-                image_path=full_path,
-                output_pdf_path=output_pdf_path,
-                title_text=title_text,
-                key=key,
-                tempo=tempo,
-                clef_type=clef_type,
-                clef_music=clef_music
-            )
+    # สร้างเส้นทางสำหรับบันทึกไฟล์
+    original_name = get_valid_filename(image.name)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    username = request.user.email if request.user.is_authenticated else 'guest'
+    base_name = f"{username}_{timestamp}"
+    media_root = settings.MEDIA_ROOT
+    output_folder = os.path.join(media_root, base_name)
+    os.makedirs(output_folder, exist_ok=True)
 
-            # อ่านไฟล์ PDF
-            with open(output_pdf_path, 'rb') as pdf_file:
-                pdf_data = pdf_file.read()
+    # กำหนดเส้นทางสำหรับบันทึกไฟล์
+    image_path = os.path.join(output_folder, f"original_{original_name}")
+    pdf_output = os.path.join(output_folder, "output_music_score.pdf")
+    image_result = os.path.join(output_folder, "output_music_score")
 
-            # # ลบไฟล์ชั่วคราว
-            # default_storage.delete(file_path)
-            # default_storage.delete(output_pdf_path)
+    # บันทึกไฟล์ภาพที่อัปโหลด
+    try:
+        with open(image_path, 'wb+') as f:
+            for chunk in image.chunks():
+                f.write(chunk)
+    except IOError as e:
+        return JsonResponse({"error": f"Failed to save file: {e}"}, status=500)
 
-            return Response({'pdf': pdf_data.hex()}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # ประมวลผลและสร้าง PDF
+    process_music_sheet(
+        image_path=image_path,
+        output_pdf_path=pdf_output,
+        title_text=title_text,
+        key=key,
+        tempo=tempo,
+        clef_type=clef_type,
+        clef_music=clef_music
+    )
+    image_file = pdf_to_images(pdf_output, image_result)
+    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score/preview_page_1.png")
+    pdf_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score.pdf")
+
+    # เข้ารหัส PDF เป็น base64
+    try:
+        with open(pdf_output, "rb") as pdf_file:
+            pdf_base64 = base64.b64encode(pdf_file.read()).decode('utf-8')
+    except IOError as e:
+        return JsonResponse({"error": f"Failed to read generated PDF file: {e}"}, status=500)
+
+    # บันทึกข้อมูลลงฐานข้อมูลถ้าผู้ใช้เข้าสู่ระบบแล้ว
+    if request.user.is_authenticated:
+        MusicSheet.objects.create(
+            user=request.user,
+            image_path=png_url,
+            pdf_path=pdf_url,
+            title_text=title_text,
+            key=key,
+            tempo=tempo,
+            clef_type=clef_type,
+            clef_music=clef_music
+        )
+
+    return JsonResponse({
+        "message": "File processed successfully",
+        "pdf_base64": pdf_base64,
+        "pdf_url": pdf_url,
+        "image_url": png_url
+    })

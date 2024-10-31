@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import Header from "./Header";
+import axiosInstance from '../utlils/axiosInstance';
 
 function NationaltoThai() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -20,33 +21,41 @@ function NationaltoThai() {
     if (!selectedFile) {
       alert('Please select a file to upload.');
       return;
-    }
-  
-    const formData = new FormData();
-    formData.append('image', selectedFile);
-    formData.append('title_text', titleText);
-    formData.append('key', key);
-    formData.append('tempo', tempo);
-    formData.append('clef_type', clefType);
-    formData.append('clef_music', clefMusic);
-  
-    console.log([...formData]); // Log the form data for verification
-  
-    setLoading(true);
-  
-    try {
-      const response = await axios.post('http://localhost:8000/api/v1/process_custom_music_sheet/', formData);
-      const pdfData = response.data.pdf;
-      const byteArray = new Uint8Array(pdfData.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+  }
+
+  const formData = new FormData();
+  formData.append('image', selectedFile);
+  formData.append('title_text', titleText || "เพลง บรรเลงใจ");
+  formData.append('key', key || "C Major");
+  formData.append('tempo', tempo || "120 BPM");
+  formData.append('clef_type', clefType || "classic");
+  formData.append('clef_music', clefMusic || "G");
+
+  console.log([...formData]); // Log the form data for verification
+
+  setLoading(true);
+
+  try {
+      const response = await axiosInstance.post('/process_custom_music_sheet/', formData);
+
+      // ตรวจสอบให้แน่ใจว่า response.data.pdf_base64 มีค่าก่อนใช้งาน
+      const pdfBase64 = response.data.pdf_base64;
+      if (!pdfBase64) {
+          throw new Error("PDF data is missing in the response");
+      }
+
+      // แปลง base64 เป็น Blob และสร้าง URL สำหรับไฟล์ PDF
+      const byteArray = new Uint8Array(atob(pdfBase64).split("").map(char => char.charCodeAt(0)));
       const blob = new Blob([byteArray], { type: 'application/pdf' });
       setPdfBlob(URL.createObjectURL(blob));
-    } catch (error) {
+  } catch (error) {
       console.error('Error uploading file:', error);
       alert('เกิดข้อผิดพลาดในการอัปโหลดไฟล์');
-    } finally {
+  } finally {
       setLoading(false);
-    }
+  }
   };
+  
   
 
   return (
