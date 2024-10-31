@@ -4,7 +4,6 @@ import { toast } from "react-toastify";
 import axiosInstance from "../utlils/axiosInstance"; // Adjust path if necessary
 import Header from './Header'; // Import Header component
 
-
 const MusicHistory = () => {
   const [hoveredRow, setHoveredRow] = React.useState(null);
   const [musicHistory, setMusicHistory] = useState([]);
@@ -45,84 +44,94 @@ const MusicHistory = () => {
     }
   };
 
+  const navigateToNationToThaiHistory = () => {
+    navigate('/music-history2'); // Update this route as per your app's routing setup
+  };
+
   if (loading) {
     return <p>Loading...</p>;
   }
 
   return (
     <div>
-    <Header/>
-    <div style={styles.container}>
-      <h1 style={styles.title}>Your Music History of Converting National to Thai</h1>
-      <table style={styles.table}>
-        <thead>
-          <tr>
-            <th style={styles.th}>File Name</th>
-            <th style={styles.th}>PDF</th>
-            <th style={styles.th}>PNG</th>
-            <th style={styles.th}>Uploaded At</th>
-          </tr>
-        </thead>
-        <tbody>
-          {musicHistory.map((file, index) => (
-            <tr
-              key={file.id}
-              style={
-                hoveredRow === index
-                  ? { ...styles.tr, ...styles.trHover }
-                  : styles.tr
-              }
-              onMouseEnter={() => setHoveredRow(index)}
-              onMouseLeave={() => setHoveredRow(null)}
-            >
-              <td style={styles.td}>{file.original_file_name}</td>
-              <td style={styles.td}>
-                <button
-                  style={styles.button}
-                  onMouseOver={(e) =>
-                    (e.target.style.backgroundColor = styles.buttonHover.backgroundColor)
-                  }
-                  onMouseOut={(e) =>
-                    (e.target.style.backgroundColor = styles.button.backgroundColor)
-                  }
-                  onClick={() =>
-                    downloadFile(file.pdf_file_path, `${file.original_file_name}_score.pdf`)
-                  }
-                >
-                  Download PDF
-                </button>
-              </td>
-              <td style={styles.td}>
-                <button
-                  style={styles.button}
-                  onMouseOver={(e) =>
-                    (e.target.style.backgroundColor = styles.buttonHover.backgroundColor)
-                  }
-                  onMouseOut={(e) =>
-                    (e.target.style.backgroundColor = styles.button.backgroundColor)
-                  }
-                  onClick={() =>
-                    downloadFile(file.png_file_path, `${file.original_file_name}_score.zip`)
-                  }
-                >
-                  Download PNG
-                </button>
-              </td>
-              <td style={styles.td}>
-                {new Date(file.created_at).toLocaleString()}
-              </td>
+      <Header />
+      <div style={styles.container}>
+        <h1 style={styles.title}>Your Music History of Converting National to Thai</h1>
+        <div style={styles.buttonContainer}>
+          <button
+            style={styles.navigateButton}
+            onClick={navigateToNationToThaiHistory}
+          >
+            Go to Nation to Thai History
+          </button>
+        </div>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>File Name</th>
+              <th style={styles.th}>PDF</th>
+              <th style={styles.th}>PNG</th>
+              <th style={styles.th}>Uploaded At</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {musicHistory.map((file, index) => (
+              <tr
+                key={file.id}
+                style={
+                  hoveredRow === index
+                    ? { ...styles.tr, ...styles.trHover }
+                    : styles.tr
+                }
+                onMouseEnter={() => setHoveredRow(index)}
+                onMouseLeave={() => setHoveredRow(null)}
+              >
+                <td style={styles.td}>{file.original_file_name}</td>
+                <td style={styles.td}>
+                  <button
+                    style={styles.button}
+                    onMouseOver={(e) =>
+                      (e.target.style.backgroundColor = styles.buttonHover.backgroundColor)
+                    }
+                    onMouseOut={(e) =>
+                      (e.target.style.backgroundColor = styles.button.backgroundColor)
+                    }
+                    onClick={() =>
+                      downloadFile(file.pdf_file_path, `${file.original_file_name}_score.pdf`)
+                    }
+                  >
+                    Download PDF
+                  </button>
+                </td>
+                <td style={styles.td}>
+                  <button
+                    style={styles.button}
+                    onMouseOver={(e) =>
+                      (e.target.style.backgroundColor = styles.buttonHover.backgroundColor)
+                    }
+                    onMouseOut={(e) =>
+                      (e.target.style.backgroundColor = styles.button.backgroundColor)
+                    }
+                    onClick={() =>
+                      downloadFile(file.png_file_path, `${file.original_file_name}_score.zip`)
+                    }
+                  >
+                    Download PNG
+                  </button>
+                </td>
+                <td style={styles.td}>
+                  {new Date(file.created_at).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
 
 export default MusicHistory;
-
-
 
 const styles = {
   container: {
@@ -136,6 +145,19 @@ const styles = {
     marginTop: '20px',
     fontSize: '32px',
     color: '#333',
+  },
+  buttonContainer: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginBottom: '20px',
+  },
+  navigateButton: {
+    padding: '15px 15px',
+    backgroundColor: '#1E2A47',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
   },
   table: {
     width: '100%',
@@ -159,7 +181,7 @@ const styles = {
   td: {
     padding: '15px',
     borderBottom: '1px solid #ddd',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   button: {
     padding: '10px 15px',

@@ -42,6 +42,10 @@ const MusicHistory2 = () => {
     }
   };
 
+  const navigateToNationToThai = () => {
+    navigate('/music-history'); // Update with the correct route path
+  };
+
   if (loading) return <p>Loading history...</p>;
 
   return (
@@ -49,6 +53,14 @@ const MusicHistory2 = () => {
       <HeaderStyled />
       <div style={styles.container}>
         <h1 style={styles.title}>Your Music History of Converting Thai to National</h1>
+        <div style={styles.buttonContainer}>
+          <button
+            style={styles.navigateButton}
+            onClick={navigateToNationToThai}
+          >
+            Go to Nation to Thai History
+          </button>
+        </div>
         <table style={styles.table}>
           <thead>
             <tr>
@@ -123,6 +135,19 @@ const styles = {
     marginTop: '20px',
     fontSize: '32px',
     color: '#333',
+  },
+  buttonContainer: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginBottom: '20px',
+  },
+  navigateButton: {
+    padding: '15px 15px',
+    backgroundColor: '#1E2A47',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
   },
   table: {
     width: '100%',
