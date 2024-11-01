@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from '../utlils/axiosInstance';
 import { toast } from 'react-toastify';
+import Stars from './star';
 
 export const ResetPassword = () => {
     const navigate = useNavigate();
@@ -60,6 +61,7 @@ export const ResetPassword = () => {
     return (
         <div style={styles.container}>
             <div style={styles.wrapper}>
+            <Stars />
                 <h2>Enter your New Password</h2>
                 <form onSubmit={handleSubmit} style={styles.form}>
                     <div style={{ ...styles.formGroup, position: 'relative' }}>
@@ -120,8 +122,9 @@ const styles = {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#f4f4f4',
+        height: '60vh',
+        borderRadius: '20px',
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
     },
     wrapper: {
         width: '800px',

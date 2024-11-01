@@ -154,7 +154,7 @@ def create_pdf(filename, title_text, key, tempo, clef, note_data):
     output_pdf_path = os.path.join(output_dir, filename)
     
     # ส่วนการสร้าง PDF
-    font_path = r"C:\Users\guyza\Desktop\project-main\Login\Music-project\django_rest_auth\music_algro\utils\NotoSansThai_Condensed-Bold.ttf"
+    font_path = r"C:\Users\User\Documents\GitHub\Login\Music-project\django_rest_auth\music_algro\utils\NotoSansThai_Condensed-Bold.ttf"
     pdfmetrics.registerFont(TTFont('NotoSansThai', font_path))
     
     # ตั้งค่าสไตล์ของ PDF

@@ -62,6 +62,11 @@ const Login = () => {
     }
   };
 
+  const handleGuestLogin = () => {
+    navigate("/");
+    toast.info("You are browsing as a guest.");
+  };
+
   return (
     <div style={styles.wrapper}>
       <Stars /> {/* Stars component is positioned in the background */}
@@ -97,6 +102,9 @@ const Login = () => {
             />
           </div>
           <input type="submit" value="Login" style={styles.submitButton} />
+          <button type="button" onClick={handleGuestLogin} style={styles.guestButton}>
+            Continue as Guest
+          </button>
           <p>
             Don't have an account?{" "}
             <Link to="/signup" style={styles.link}>
@@ -167,6 +175,17 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     fontSize: "16px",
+    transition: "background-color 0.3s",
+  },
+  guestButton: {
+    padding: "10px 20px",
+    backgroundColor: "#888",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "16px",
+    marginTop: "10px",
     transition: "background-color 0.3s",
   },
   link: {
