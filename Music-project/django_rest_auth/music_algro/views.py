@@ -70,9 +70,9 @@ def map_to_universal_format(char):
         'ด': 'C4', 'ร': 'D4', 'ม': 'E4', 'ฟ': 'F4',
         'ซ': 'G4', 'ล': 'A4', 'ท': 'B4', 'ดํ': 'C5',
         'รํ': 'D5', 'มํ': 'E5', 'ฟํ': 'F5', 'ซํ': 'G5',
-        'ลํ': 'A5', 'ทํ': 'B5', 'ดฺ': 'C4', 'รฺ': 'D4',
-        'มฺ': 'E4', 'ฟฺ': 'F4', 'ซฺ': 'G4', 'ลฺ': 'A4',
-        'ทฺ': 'B4'
+        'ลํ': 'A5', 'ทํ': 'B5', 'ดฺ': 'C3', 'รฺ': 'D3',
+        'มฺ': 'E3', 'ฟฺ': 'F3', 'ซฺ': 'G3', 'ลฺ': 'A3',
+        'ทฺ': 'B3'
     }
     return mappings.get(char, char)
 
@@ -184,7 +184,7 @@ def process_music_ocr(request):
 
     # OCR processing
     reader = easyocr.Reader(['th'])
-    ocr_results = reader.readtext(enhanced_image, detail=0, allowlist="ดรมฟซลท-ฺํุูช",min_size=11)
+    ocr_results = reader.readtext(enhanced_image, detail=0, allowlist="ดรมฟซลท-ฺํุูช")
     corrected = [correct_text(line) for line in ocr_results]
     universal_results = {f"box_{i}": transform_to_universal_format(line) for i, line in enumerate(corrected)}
     print(ocr_results)

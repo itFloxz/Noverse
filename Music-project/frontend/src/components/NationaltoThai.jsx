@@ -61,7 +61,7 @@ function NationaltoThai() {
   return (
     <div>
   <Header />
-  <h1 style={{ textAlign: "center", fontSize: "2em", margin: "20px 0", color: "#4A4A4A" }}>Convert National to Thai</h1>
+  <h2 >Convert National to Thai</h2>
 
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px', padding: '20px', borderRadius: '10px', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)', maxWidth: '500px', margin: 'auto', backgroundColor: '#f9f9f9' }}>
     <input type="file" accept="image/*" onChange={handleFileChange} style={{ marginBottom: '15px', padding: '10px' }} />
