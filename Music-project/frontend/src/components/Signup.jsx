@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate ,Link} from "react-router-dom";
 import { toast } from "react-toastify";
 import Stars from "./star";
 
@@ -163,6 +163,9 @@ const Signup = () => {
               style={styles.input}
             />
           </div>
+          <Link to="/login" style={styles.link}>
+              Already Have Account ?
+            </Link>
           <input
             type="submit"
             value="Submit"

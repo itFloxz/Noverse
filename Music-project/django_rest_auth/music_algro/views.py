@@ -1,25 +1,31 @@
 import os
 import re
+import base64
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from datetime import datetime
-from PIL import Image, ImageFilter ,ImageEnhance
+from PIL import Image,ImageEnhance
 import easyocr
 from django.conf import settings
 from django.http import JsonResponse
 from django.utils.text import get_valid_filename
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from music21 import stream, note, environment, meter
+from music21 import stream, note, environment, meter ,metadata
+from django.core.files.storage import default_storage
 import fitz
-from .models import MusicFile
+from .models import MusicFile,MusicSheet
 from .serializers import MusicFileSerializer
 from rest_framework.response import Response
 import zipfile
+from .utils.main import process_music_sheet
+from .serializers import MusicSheetSerializer
+from rest_framework import status
 
 # Set MuseScore path globally
 environment.set('musescoreDirectPNGPath', r'C:\Program Files\MuseScore 4\bin\MuseScore4.exe')
 
-def enhance_image_advanced(image_path, sharpness_factor=1.5, contrast_factor=1.5):
+def enhance_image_advanced(image_path, sharpness_factor=1.5, contrast_factor=1.0):
     """Enhances the image by adjusting sharpness, converting to grayscale, and increasing contrast."""
     try:
         if not os.path.isfile(image_path):
@@ -54,7 +60,7 @@ def enhance_image_advanced(image_path, sharpness_factor=1.5, contrast_factor=1.5
 def correct_text(detected_text):
     """Applies specific corrections to the OCR output."""
     correction_map = {
-        "ุู": "ฺ", "ช": "ซ", "พ": "ฟ", "": "-"
+        "ุ": "ฺ", "ช": "ซ", "พ": "ฟ", "": "-","ู":"ฺ"
     }
     return ''.join(correction_map.get(char, char) for char in detected_text)
 
@@ -64,9 +70,9 @@ def map_to_universal_format(char):
         'ด': 'C4', 'ร': 'D4', 'ม': 'E4', 'ฟ': 'F4',
         'ซ': 'G4', 'ล': 'A4', 'ท': 'B4', 'ดํ': 'C5',
         'รํ': 'D5', 'มํ': 'E5', 'ฟํ': 'F5', 'ซํ': 'G5',
-        'ลํ': 'A5', 'ทํ': 'B5', 'ดฺ': 'C4', 'รฺ': 'D4',
-        'มฺ': 'E4', 'ฟฺ': 'F4', 'ซฺ': 'G4', 'ลฺ': 'A4',
-        'ทฺ': 'B4'
+        'ลํ': 'A5', 'ทํ': 'B5', 'ดฺ': 'C3', 'รฺ': 'D3',
+        'มฺ': 'E3', 'ฟฺ': 'F3', 'ซฺ': 'G3', 'ลฺ': 'A3',
+        'ทฺ': 'B3'
     }
     return mappings.get(char, char)
 
@@ -87,9 +93,11 @@ def extract_music_elements(text, pattern):
     """Extracts musical elements matching a given pattern."""
     return pattern.findall(text)
 
-def create_music_score(elements, mapping, time_signature='2/4', duration=0.5):
+def create_music_score(elements, mapping,Musicname, time_signature='2/4', duration=0.5):
     """Creates a music score from elements using music21."""
     score = stream.Stream()
+    score.metadata = metadata.Metadata()
+    score.metadata.title = Musicname
     score.append(meter.TimeSignature(time_signature))
     for elem in elements:
         n = note.Rest(quarterLength=duration) if elem == '-' else note.Note(
@@ -97,15 +105,6 @@ def create_music_score(elements, mapping, time_signature='2/4', duration=0.5):
         )
         score.append(n)
     return score
-
-# def pdf_to_png(pdf_path, output_path):
-#     """Converts a PDF file to PNG images."""
-#     pdf = fitz.open(pdf_path)
-#     for page_num in range(len(pdf)):
-#         page = pdf.load_page(page_num)
-#         pix = page.get_pixmap(dpi=600)
-#         pix.save(f"{output_path}_{page_num}.png")
-#     pdf.close()
 
 
 def pdf_to_images(pdf_path, output_folder):
@@ -117,12 +116,12 @@ def pdf_to_images(pdf_path, output_folder):
     # แปลงหน้าแรกแยกต่างหาก
     first_page = pdf.load_page(0)  # โหลดหน้าแรก
     first_pix = first_page.get_pixmap(dpi=600)  # แปลงเป็นภาพด้วย DPI 600
-    first_page_path = os.path.join(output_folder, "first_page.png")
+    first_page_path = os.path.join(output_folder, "preview_page_1.png")
     first_pix.save(first_page_path)  # บันทึกหน้าแรกเป็น PNG
     image_files.append(first_page_path)  # เพิ่มลงในลิสต์ไฟล์ภาพ
 
     # แปลงหน้าที่เหลือ (ถ้ามี) เป็น PNG
-    for page_num in range(0, len(pdf)):
+    for page_num in range(1, len(pdf)):
         page = pdf.load_page(page_num)  # โหลดหน้าถัดไป
         pix = page.get_pixmap(dpi=600)  # แปลงเป็นภาพ
         image_file = os.path.join(output_folder, f"page_{page_num}.png")
@@ -163,7 +162,7 @@ def process_music_ocr(request):
     os.makedirs(output_folder, exist_ok=True)
 
     # กำหนดเส้นทางของไฟล์ต่าง ๆ ภายในโฟลเดอร์ที่สร้าง
-    file_path = os.path.join(output_folder, f"original_{original_name}")
+    file_path = os.path.join(output_folder, f"original_{original_name}.png")
     pdf_output = os.path.join(output_folder, "output_music_score.pdf")
     png_output = os.path.join(output_folder, "output_music_score")
     zip_output = os.path.join(output_folder, "images.zip")
@@ -179,22 +178,24 @@ def process_music_ocr(request):
         return JsonResponse({"error": f"Failed to save file: {e}"}, status=500)
 
     # Enhance the image for better OCR
-    enhanced_image = enhance_image_advanced(file_path, sharpness_factor=3.0, contrast_factor=2.0)
+    enhanced_image = enhance_image_advanced(file_path, sharpness_factor=2, contrast_factor=1.0)
     if not enhanced_image:
         return JsonResponse({"error": "Failed to enhance image"}, status=500)
 
     # OCR processing
     reader = easyocr.Reader(['th'])
-    ocr_results = reader.readtext(enhanced_image, detail=0, allowlist="ดรมฟซลท-ฺํุู")
+    ocr_results = reader.readtext(enhanced_image, detail=0, allowlist="ดรมฟซลท-ฺํุูช")
     corrected = [correct_text(line) for line in ocr_results]
     universal_results = {f"box_{i}": transform_to_universal_format(line) for i, line in enumerate(corrected)}
-
+    print(ocr_results)
+    print(corrected)
+    print(universal_results)
     # สร้างโน้ตดนตรีจากผลลัพธ์ OCR
     pattern = re.compile(r'C#?4|D#?4|E#?4|F#?4|G#?4|A#?4|B#?4|C#?5|D#?5|E#?5|F#?5|G#?5|A#?5|B#?5|-')
     elements = [elem for text in universal_results.values() for elem in extract_music_elements(text, pattern)]
 
     natural_mapping = {f"{n}#4": f"{n}4" for n in "CDEFGAB"} | {f"{n}#5": f"{n}5" for n in "CDEFGAB"}
-    score = create_music_score(elements, natural_mapping)
+    score = create_music_score(elements, natural_mapping , original_name)
 
     try:
         score.write('musicxml.pdf', pdf_output)
@@ -209,7 +210,7 @@ def process_music_ocr(request):
         return JsonResponse({"error": f"Failed to generate zip: {e}"}, status=500)
 
     # สร้าง URL สำหรับดาวน์โหลด PDF และ ZIP
-    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score/first_page.png")
+    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score/preview_page_1.png")
     pdf_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score.pdf")
     zip_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/images.zip")
 
@@ -237,4 +238,90 @@ def user_music_history(request):
     user = request.user  # ดึง user ที่ทำการ authenticated
     music_files = MusicFile.objects.filter(user=user).order_by('-created_at')  # เรียงตามวันที่ล่าสุด
     serializer = MusicFileSerializer(music_files, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def music_sheet_upload(request):
+    # รับค่าจาก request.data โดยตรง
+    image = request.FILES.get('image')
+    title_text = request.data.get('title_text')
+    key = request.data.get('key',)
+    tempo = request.data.get('tempo')
+    clef_type = request.data.get('clef_type')
+    clef_music = request.data.get('clef_music')
+
+    if not image:
+        return JsonResponse({"error": "Image file is required."}, status=400)
+
+    # สร้างเส้นทางสำหรับบันทึกไฟล์
+    original_name = get_valid_filename(image.name)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    username = request.user.email if request.user.is_authenticated else 'guest'
+    base_name = f"{username}_{timestamp}"
+    media_root = settings.MEDIA_ROOT
+    output_folder = os.path.join(media_root, base_name)
+    os.makedirs(output_folder, exist_ok=True)
+
+    # กำหนดเส้นทางสำหรับบันทึกไฟล์
+    image_path = os.path.join(output_folder, f"original_{original_name}")
+    pdf_output = os.path.join(output_folder, "output_music_score.pdf")
+    image_result = os.path.join(output_folder, "output_music_score")
+
+    # บันทึกไฟล์ภาพที่อัปโหลด
+    try:
+        with open(image_path, 'wb+') as f:
+            for chunk in image.chunks():
+                f.write(chunk)
+    except IOError as e:
+        return JsonResponse({"error": f"Failed to save file: {e}"}, status=500)
+
+    # ประมวลผลและสร้าง PDF
+    process_music_sheet(
+        image_path=image_path,
+        output_pdf_path=pdf_output,
+        title_text=title_text,
+        key=key,
+        tempo=tempo,
+        clef_type=clef_type,
+        clef_music=clef_music
+    )
+    image_file = pdf_to_images(pdf_output, image_result)
+    png_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score/preview_page_1.png")
+    pdf_url = request.build_absolute_uri(settings.MEDIA_URL + f"{base_name}/output_music_score.pdf")
+
+    # เข้ารหัส PDF เป็น base64
+    try:
+        with open(pdf_output, "rb") as pdf_file:
+            pdf_base64 = base64.b64encode(pdf_file.read()).decode('utf-8')
+    except IOError as e:
+        return JsonResponse({"error": f"Failed to read generated PDF file: {e}"}, status=500)
+
+    # บันทึกข้อมูลลงฐานข้อมูลถ้าผู้ใช้เข้าสู่ระบบแล้ว
+    if request.user.is_authenticated:
+        MusicSheet.objects.create(
+            user=request.user,
+            image_path=png_url,
+            pdf_path=pdf_url,
+            title_text=title_text,
+            key=key,
+            tempo=tempo,
+            clef_type=clef_type,
+            clef_music=clef_music
+        )
+
+    return JsonResponse({
+        "message": "File processed successfully",
+        "pdf_base64": pdf_base64,
+        "pdf_url": pdf_url,
+        "image_url": png_url
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def history_view(request):
+    user = request.user
+    music_sheets = MusicSheet.objects.filter(user=user).order_by('-created_at')
+    serializer = MusicSheetSerializer(music_sheets, many=True)
     return Response(serializer.data)

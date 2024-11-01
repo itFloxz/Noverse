@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { VscAccount, VscHistory, VscSignOut } from "react-icons/vsc"; // Import icons
+import { VscAccount, VscHistory, VscSignOut, VscChevronDown } from "react-icons/vsc"; // Import icons
 
 const HeaderStyled = () => {
   const navigate = useNavigate();
@@ -31,11 +31,11 @@ const HeaderStyled = () => {
       </div>
       <div style={styles.centerSection}>
         <a href="/FileUploadCrop" style={styles.link}>
-          แปลงโน้ตไทย เป็น โน้ตสากล
+        Thai to National
         </a>
         <span style={styles.separator}> | </span>
         <a href="/international-to-thai" style={styles.link}>
-          แปลงโน้ตสากล เป็น โน้ตไทย
+        National to Thai
         </a>
       </div>
       <div style={styles.rightSection}>
@@ -48,9 +48,17 @@ const HeaderStyled = () => {
                 <Link to="/dashboard" style={styles.dropdownItem}>
                   <VscAccount style={styles.icon} /> Profile
                 </Link>
-                <Link to="/music-history" style={styles.dropdownItem}>
-                  <VscHistory style={styles.icon} /> History
-                </Link>
+                <div className="history-parent" style={styles.dropdownItem}>
+                  <VscHistory style={styles.icon} /> History <VscChevronDown style={styles.icon} />
+                </div>
+                <div className="history-child" style={styles.subDropdownBelowHistory}>
+                  <Link to="/music-history" style={styles.subDropdownItem}>
+                    Thai to National
+                  </Link>
+                  <Link to="/music-history2" style={styles.subDropdownItem}>
+                    National to Thai
+                  </Link>
+                </div>
                 <button onClick={handleLogout} style={styles.dropdownItem}>
                   <VscSignOut style={styles.icon} /> Logout
                 </button>
@@ -98,7 +106,7 @@ const styles = {
     textAlign: 'center',
   },
   link: {
-    fontSize: '16px',
+    fontSize: '20px',
     color: '#d1d5db',
     textDecoration: 'none',
     margin: '0 10px',
@@ -141,6 +149,17 @@ const styles = {
     backgroundColor: 'transparent',
     border: 'none',
     width: '100%',
+    transition: 'background-color 0.3s, color 0.3s',
+  },
+  subDropdownBelowHistory: {
+    marginTop: '0',
+    paddingLeft: '20px',
+  },
+  subDropdownItem: {
+    padding: '8px 10px',
+    color: '#d1d5db',
+    textDecoration: 'none',
+    display: 'block',
     transition: 'background-color 0.3s, color 0.3s',
   },
   icon: {

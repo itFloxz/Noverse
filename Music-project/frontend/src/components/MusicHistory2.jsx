@@ -2,21 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axiosInstance from "../utlils/axiosInstance"; // Adjust path if necessary
-import Header from './Header'; // Import Header component
+import HeaderStyled from './Header'; // Import Header component
 
-const MusicHistory = () => {
+const MusicHistory2 = () => {
   const [hoveredRow, setHoveredRow] = React.useState(null);
-  const [musicHistory, setMusicHistory] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMusicHistory = async () => {
+    const fetchHistory = async () => {
       try {
-        const response = await axiosInstance.get('/music-history/');
-        setMusicHistory(response.data);
+        const response = await axiosInstance.get('/history/');
+        setHistory(response.data);
       } catch (error) {
-        console.error('Error fetching music history:', error);
+        console.error('Error fetching history:', error);
         toast.error("Please login again!");
         navigate("/login"); // Redirect to login if there's an error
       } finally {
@@ -24,43 +24,39 @@ const MusicHistory = () => {
       }
     };
 
-    fetchMusicHistory();
+    fetchHistory();
   }, []);
 
   const downloadFile = async (filePath, fileName) => {
     try {
-      const response = await axiosInstance.get(filePath, {
-        responseType: 'blob', // Important to get the file as binary data (Blob)
-      });
+      const response = await axiosInstance.get(filePath, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', fileName); // Specify the file name
+      link.setAttribute('download', fileName);
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link); // Clean up
+      link.parentNode.removeChild(link);
     } catch (error) {
       console.error('Error downloading the file:', error);
     }
   };
 
-  const navigateToNationToThaiHistory = () => {
-    navigate('/music-history2'); // Update this route as per your app's routing setup
+  const navigateToNationToThai = () => {
+    navigate('/music-history'); // Update with the correct route path
   };
 
-  if (loading) {
-    return <p>Loading...</p>;
-  }
+  if (loading) return <p>Loading history...</p>;
 
   return (
     <div>
-      <Header />
+      <HeaderStyled />
       <div style={styles.container}>
-        <h1 style={styles.title}>Your Music History of Converting National to Thai</h1>
+        <h1 style={styles.title}>Your Music History of Converting Thai to National</h1>
         <div style={styles.buttonContainer}>
           <button
             style={styles.navigateButton}
-            onClick={navigateToNationToThaiHistory}
+            onClick={navigateToNationToThai}
           >
             Go to Nation to Thai History
           </button>
@@ -68,16 +64,19 @@ const MusicHistory = () => {
         <table style={styles.table}>
           <thead>
             <tr>
-              <th style={styles.th}>File Name</th>
+              <th style={styles.th}>Title</th>
+              <th style={styles.th}>Key</th>
+              <th style={styles.th}>Tempo</th>
+              <th style={styles.th}>Clef Type</th>
               <th style={styles.th}>PDF</th>
-              <th style={styles.th}>PNG</th>
+              <th style={styles.th}>Image</th>
               <th style={styles.th}>Uploaded At</th>
             </tr>
           </thead>
           <tbody>
-            {musicHistory.map((file, index) => (
+            {history.map((sheet, index) => (
               <tr
-                key={file.id}
+                key={sheet.id}
                 style={
                   hoveredRow === index
                     ? { ...styles.tr, ...styles.trHover }
@@ -86,19 +85,16 @@ const MusicHistory = () => {
                 onMouseEnter={() => setHoveredRow(index)}
                 onMouseLeave={() => setHoveredRow(null)}
               >
-                <td style={styles.td}>{file.original_file_name}</td>
+                <td style={styles.td}>{sheet.title_text}</td>
+                <td style={styles.td}>{sheet.key}</td>
+                <td style={styles.td}>{sheet.tempo}</td>
+                <td style={styles.td}>{sheet.clef_type}</td>
                 <td style={styles.td}>
                   <button
                     style={styles.button}
-                    onMouseOver={(e) =>
-                      (e.target.style.backgroundColor = styles.buttonHover.backgroundColor)
-                    }
-                    onMouseOut={(e) =>
-                      (e.target.style.backgroundColor = styles.button.backgroundColor)
-                    }
-                    onClick={() =>
-                      downloadFile(file.pdf_file_path, `${file.original_file_name}_score.pdf`)
-                    }
+                    onMouseOver={(e) => e.target.style.backgroundColor = styles.buttonHover.backgroundColor}
+                    onMouseOut={(e) => e.target.style.backgroundColor = styles.button.backgroundColor}
+                    onClick={() => downloadFile(sheet.pdf_path, `${sheet.title_text}_score.pdf`)}
                   >
                     Download PDF
                   </button>
@@ -106,21 +102,15 @@ const MusicHistory = () => {
                 <td style={styles.td}>
                   <button
                     style={styles.button}
-                    onMouseOver={(e) =>
-                      (e.target.style.backgroundColor = styles.buttonHover.backgroundColor)
-                    }
-                    onMouseOut={(e) =>
-                      (e.target.style.backgroundColor = styles.button.backgroundColor)
-                    }
-                    onClick={() =>
-                      downloadFile(file.png_file_path, `${file.original_file_name}_score.zip`)
-                    }
+                    onMouseOver={(e) => e.target.style.backgroundColor = styles.buttonHover.backgroundColor}
+                    onMouseOut={(e) => e.target.style.backgroundColor = styles.button.backgroundColor}
+                    onClick={() => downloadFile(sheet.image_path, `${sheet.title_text}_image.png`)}
                   >
-                    Download PNG
+                    Download Image
                   </button>
                 </td>
                 <td style={styles.td}>
-                  {new Date(file.created_at).toLocaleString()}
+                  {new Date(sheet.created_at).toLocaleString()}
                 </td>
               </tr>
             ))}
@@ -131,7 +121,7 @@ const MusicHistory = () => {
   );
 };
 
-export default MusicHistory;
+export default MusicHistory2;
 
 const styles = {
   container: {
@@ -181,7 +171,7 @@ const styles = {
   td: {
     padding: '15px',
     borderBottom: '1px solid #ddd',
-    textAlign: 'center',
+    textAlign: 'center'
   },
   button: {
     padding: '10px 15px',

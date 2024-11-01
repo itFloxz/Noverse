@@ -70,10 +70,10 @@ form {
   width: 100%;
   margin-bottom: 10px;
 }
+
 h2 {
   border-bottom: 1px solid white;
   color: #3d3d3d;
-  font-family: sans-serif;
   font-size: 34px;
   font-weight: 600;
   line-height: 24px;
@@ -147,4 +147,76 @@ h3 {
   min-height: 100vh;
   background: radial-gradient(ellipse at bottom, #0d1d31 0%, #0c0d13 100%);
   overflow: hidden;
+}
+/* Style for the main form container */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 600px;
+  height: 350px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.5); /* Light background color */
+  padding: 20px;
+}
+
+/* Form styling */
+form {
+  width: 500px;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Form group and label styling */
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 8px;
+  display: block;
+  font-weight: 500;
+}
+
+/* OTP input styling */
+.email-form {
+  width: 100%;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.email-form:focus {
+  border-color: #007bff;
+}
+
+/* Submit button styling */
+.vbtn {
+  width: 100%;
+  padding: 12px;
+  background-color: #1E2A47;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.vbtn:hover {
+  background-color: #0056b3;
+}
+
+/* Style for the Stars component to align it */
+.stars-container {
+  margin-bottom: 20px;
+  text-align: center;
 }
