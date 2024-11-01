@@ -10,6 +10,7 @@ from .main_line import read_line
 from .note import note_image
 from django.conf import settings
 import os
+from .rometext import remove_text
 # กำหนด clef สำหรับ G และ F
 g_clef = {
     'classic': ['ด3', 'ท2', 'ล2', 'ซ2', 'ฟ2', 'ม2', 'ร2', 'ด2', 'ท1', 'ล1', 'ซ1', 'ฟ1', 'ม1', 'ร1', 'ด1'],
@@ -198,7 +199,7 @@ def create_pdf(filename, title_text, key, tempo, clef, note_data):
     doc.build(elements)
     print(f"PDF สร้างเสร็จเรียบร้อยที่ {output_pdf_path}")
 
-def process_music_sheet(image_path, output_pdf_path="song_structure_custom.pdf", title_text="เพลง บรรเลงใจ", key="C Major", tempo="120 BPM", clef_type="classic", clef_music="G"):
+def process_music_sheet(image_path, output_pdf_path="song_structure_custom.pdf", title_text="เพลง", key="C Major", tempo="120 BPM", clef_type="classic", clef_music="G"):
     """
     ฟังก์ชันหลักในการประมวลผลแผ่นโน้ตและสร้าง PDF
     
@@ -211,7 +212,8 @@ def process_music_sheet(image_path, output_pdf_path="song_structure_custom.pdf",
     :param clef_music: ประเภทของกุญแจดนตรี ("G" หรือ "F")
     """
     # อ่านและประมวลผลรูปภาพโน้ต
-    lines_info, total_labels, max_x_coordinates = note_image(image_path)
+    remove = remove_text(image_path)
+    lines_info, total_labels, max_x_coordinates = note_image(remove)
     lines_info = sort_lines_by_x(lines_info)
     print(f"\nTotal Labels: {total_labels} and {lines_info} and {max_x_coordinates}")
     

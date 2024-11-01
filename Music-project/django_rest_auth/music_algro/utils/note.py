@@ -48,7 +48,11 @@ def note_image(image_path):
         total_labels: จำนวนรวมของ labels ทั้งหมด
     """
     # เปิดภาพ
-    image = Image.open(image_path)
+    if isinstance(image_path, np.ndarray):
+        image = Image.fromarray(image_path)
+    else:
+        image = Image.open(image_path)
+    
     modified_image, grouped_max_y_coordinates_array, max_x_coordinates, start_y_coords = read_line(image)
 
     # แปลงภาพเป็นโหมด RGB
