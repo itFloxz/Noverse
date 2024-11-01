@@ -11,7 +11,23 @@ function NationaltoThai() {
   const [clefType, setClefType] = useState("classic");
   const [clefMusic, setClefMusic] = useState("G");
   const [pdfBlob, setPdfBlob] = useState(null);
+  const [pngblob, setPngBlob] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  const handleDownload = (url, filename) => {
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      })
+      .catch(error => console.error('Download failed:', error));
+  };
+  
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
@@ -43,7 +59,7 @@ function NationaltoThai() {
       if (!pdfBase64) {
           throw new Error("PDF data is missing in the response");
       }
-
+      setPngBlob(response.data.image_url)
       // แปลง base64 เป็น Blob และสร้าง URL สำหรับไฟล์ PDF
       const byteArray = new Uint8Array(atob(pdfBase64).split("").map(char => char.charCodeAt(0)));
       const blob = new Blob([byteArray], { type: 'application/pdf' });
@@ -133,7 +149,7 @@ function NationaltoThai() {
   {pdfBlob && (
         <div style={{ marginTop: '30px', textAlign: 'center' }}>
           <h2 style={{ color: "#4A4A4A" }}>Preview :</h2>
-          <a href={pdfBlob} download="song_structure_custom.pdf" style={{ textDecoration: 'none' }}>
+          {/* <a href={pdfBlob} download="song_structure_custom.pdf" style={{ textDecoration: 'none' }}>
             <button style={{
               backgroundColor: '#1E2A47',
               color: '#FFF',
@@ -146,7 +162,33 @@ function NationaltoThai() {
             }}>
               ดาวน์โหลด PDF
             </button>
-          </a>
+          </a> */}
+          <button onClick={() => handleDownload(pdfBlob, 'song_structure_custom.pdf')} 
+          style={{
+            backgroundColor: '#1E2A47',
+            color: '#FFF',
+            padding: '10px 20px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}>
+            Download PDF
+        </button>
+          <button onClick={() => handleDownload(pngblob, 'song_structure_custom.png')} 
+          style={{
+            backgroundColor: '#1E2A47',
+            color: '#FFF',
+            padding: '10px 20px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}>
+            Download PNG
+        </button>
           <div style={{ marginTop: '10px' }}>
             <embed
               src={pdfBlob}
