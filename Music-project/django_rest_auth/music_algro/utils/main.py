@@ -80,8 +80,8 @@ def get_note_from_y(y, line_data, clef="classic", clef_music="G"):
             
             for lower_bound_y, upper_bound_y in bounds_y:
                 if lower_bound_y <= y < upper_bound_y:
-                    return note_list[idx]  # คืนโน้ตที่ตรงกับ y
-    return None  # หากไม่พบโน้ต
+                    return note_list[idx]  
+    return None 
 
 def assign_notes_to_positions(lines_info, clef="classic", clef_music="G"):
     """วนลูปผ่านทุก line ใน lines_info และดึงข้อมูล y เพื่อค้นหาโน้ต"""
@@ -145,42 +145,30 @@ def format_cell_content(cell_content):
     return ' '.join(cell_content) if isinstance(cell_content, list) else cell_content
 
 def create_pdf(filename, title_text, key, tempo, clef, note_data):
-    # ระบุเส้นทางของไฟล์ PDF ให้บันทึกในโฟลเดอร์ media/output
     output_dir = os.path.join(settings.MEDIA_ROOT, 'output')
-    os.makedirs(output_dir, exist_ok=True)  # สร้างโฟลเดอร์ output ถ้ายังไม่มี
-
-    # เส้นทางเต็มของไฟล์ PDF ที่จะสร้าง
+    os.makedirs(output_dir, exist_ok=True)  
     output_pdf_path = os.path.join(output_dir, filename)
-    
-    # ส่วนการสร้าง PDF
     font_path = r"C:\Users\User\Documents\GitHub\Login\Music-project\django_rest_auth\music_algro\utils\NotoSansThai_Condensed-Bold.ttf"
     pdfmetrics.registerFont(TTFont('NotoSansThai', font_path))
-    
-    # ตั้งค่าสไตล์ของ PDF
+
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name='ThaiTitle', fontName='NotoSansThai', fontSize=32, alignment=1))  # Centered title
     styles.add(ParagraphStyle(name='ThaiCell', fontName='NotoSansThai', fontSize=14, alignment=0))  # Left-aligned content
     styles.add(ParagraphStyle(name='ThaiInfo', fontName='NotoSansThai', fontSize=18, alignment=0))  # Left-aligned info
     
-    # เริ่มต้นเอกสาร PDF
     doc = SimpleDocTemplate(output_pdf_path, pagesize=A4)
     elements = []
 
-    # เพิ่มข้อมูลให้กับเอกสาร (หัวเรื่อง ข้อมูลโน้ต และอื่นๆ)
     title = Paragraph(title_text, styles['ThaiTitle'])
     elements.append(title)
     elements.append(Spacer(1, 0.5 * cm))
-
-    # เพิ่มข้อมูลทั่วไปของเพลง
     key_info = Paragraph(f"คีย์เพลง: {key}", styles['ThaiInfo'])
     tempo_info = Paragraph(f"ความเร็ว: {tempo}", styles['ThaiInfo'])
     clef_info = Paragraph(f"กุญแจ: {clef}", styles['ThaiInfo'])
-
     info_elements = [key_info, Spacer(1, 0.2 * cm), tempo_info, Spacer(1, 0.2 * cm), clef_info]
     elements.extend(info_elements)
     elements.append(Spacer(1, 1 * cm))
 
-    # จัดการข้อมูล note_data และเพิ่มลงใน PDF
     formatted_lines = []
     for row in note_data:
         row_text = format_cell_content(row)
@@ -194,7 +182,6 @@ def create_pdf(filename, title_text, key, tempo, clef, note_data):
         elements.append(row_paragraph)
         elements.append(Spacer(1, 0.3 * cm))
 
-    # สร้างและบันทึก PDF
     doc.build(elements)
     print(f"PDF สร้างเสร็จเรียบร้อยที่ {output_pdf_path}")
 
@@ -210,27 +197,20 @@ def process_music_sheet(image_path, output_pdf_path="song_structure_custom.pdf",
     :param clef_type: ประเภทของกุญแจ (classic, sharp_1, flat_1, ฯลฯ)
     :param clef_music: ประเภทของกุญแจดนตรี ("G" หรือ "F")
     """
-    # อ่านและประมวลผลรูปภาพโน้ต
     lines_info, total_labels, max_x_coordinates = note_image(image_path)
     lines_info = sort_lines_by_x(lines_info)
     print(f"\nTotal Labels: {total_labels} and {lines_info} and {max_x_coordinates}")
     
-    # จัดสรรโน้ตให้กับตำแหน่ง
     lines_info = assign_notes_to_positions(lines_info, clef=clef_type, clef_music=clef_music)
     
-    # กรองข้อมูล
     filtered_lines_info = filter_lines_info(lines_info)
     
-    # ดึงทุก label
     all_labels = extract_all_labels(filtered_lines_info)
     
-    # แยก label และลบ 'No match'
     split_labels = [item for label in all_labels if label != 'No match' for item in split_label(label)]
     
-    # แบ่งข้อมูลเป็นชิ้นๆ
     table_data = chunk_data(split_labels)
     
-    # สร้าง PDF
     create_pdf(
         filename=output_pdf_path,
         title_text=title_text,
