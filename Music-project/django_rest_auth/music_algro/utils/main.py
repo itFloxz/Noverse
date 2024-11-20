@@ -10,7 +10,6 @@ from .main_line import read_line
 from .note import note_image
 from django.conf import settings
 import os
-# กำหนด clef สำหรับ G และ F
 g_clef = {
     'classic': ['ด3', 'ท2', 'ล2', 'ซ2', 'ฟ2', 'ม2', 'ร2', 'ด2', 'ท1', 'ล1', 'ซ1', 'ฟ1', 'ม1', 'ร1', 'ด1'],
     'sharp_1': ['ด3', 'ท2', 'ล2', 'ซ2', 'ฟ#2', 'ม2', 'ร2', 'ด2', 'ท1', 'ล1', 'ซ1', 'ฟ#1', 'ม1', 'ร1', 'ด1'],
